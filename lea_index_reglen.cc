@@ -28,12 +28,12 @@ inline uint32_t get_kmer_length(int64_t l_pac)
 	//FIXME need more complex function
 	uint32_t kmer_len;
 	if(l_pac < 100000 )
-		kmer_len = 20;
+		kmer_len = 2;
 	else
 		kmer_len = 30;
 	return kmer_len;
 }
-
+//0 3 0 1 2 0 0 0 0 0 11 2 0
 //Returns a number,
 static DistancesInfo get_increase_decrease(DistancesInfo distances_info, uint64_t distance){
 
@@ -44,6 +44,7 @@ static DistancesInfo get_increase_decrease(DistancesInfo distances_info, uint64_
 		dis_info.disances_bits.push_back(0);
 	else
 		dis_info.disances_bits.push_back(1);
+	dis_info.last_distance = distance;
 	return dis_info;
 }
 
@@ -56,7 +57,8 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 
 	char debug_array[4] = {'A','C','G','T'};
 
-	//fprintf(stderr,"%llu",opt.kmer_table_len);
+
+
 	//Only index forward sequence
 	if (! opt.index_parameter.index_reverse_complement)
 	{
@@ -75,50 +77,67 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 				break;
 			  }
 		  }
-	      //fprintf(stderr, "%llu ",last_char2end_len[charater]);
-	  }
 
-	  //FIXME actually we need build 4 table, right now only consider the table using A
-	  //for each position, generate sliced kmers
-	  int charater = 0;
-	  uint64_t shift =0, distance = 0, last_distance;
-	  std::list<uint8_t> last_distances_bits;
-	  std::vector<uint64_t> distances;
-	  //Find firt k number of charater
-	  int k = opt.index_parameter.kmer_len;
-	  while(1){
-		  shift++;
-		  distance ++;
-		  key = read_position_value(reference_info.pac, shift);
-		  //fprintf(stderr, "%c",debug_array[key]);
-		  if (key == charater){
-			  distances.push_back(distance-1);
-		 	 distance = 0;
-		 	 k--;
+	  }// end for
+
+
+
+
+	  {
+		  //FIXME actually we need build 4 table, right now only consider the table using A
+		  //for each position, generate sliced kmers
+		  int charater = 0;
+		  uint64_t shift =0, distance = 0;
+		  std::list<uint8_t> last_distances_bits;
+		  std::vector<uint64_t> distances;
+		  {
+			  //Find firt k number of charater
+			  int k = opt.index_parameter.kmer_len;
+			  while(1){
+				  shift++;
+				  distance ++;
+				  key = read_position_value(reference_info.pac, shift);
+				  //fprintf(stderr, "k:%llu ",key);
+				  if (key == charater){
+					distances.push_back(distance-1);
+					//fprintf(stderr, "d:%llu\n",distance);
+					distance = 0;
+					k--;
+				  }
+				  if(k == 0)break;
+			  }
+
+			  for(uint i=0;i< distances.size() -1;i++){
+				  if( distances[i] <= distances[i+1])
+					  last_distances_bits.push_back(0);
+				  else
+					  last_distances_bits.push_back(1);
+			  }
 		  }
-		  if(k == 0)break;
-	  }
-	  for(int i=0;i< distances.size() -1;i++){
-		  fprintf(stderr,"%d ",distances[i]);
-		  if( distances[i] <= distances[i+1])
-			  last_distances_bits.push_back(0);
-		  else
-		  	  last_distances_bits.push_back(1);
-	  }
-	  fprintf(stderr,"\n");
-	  //for(int i=0; i< last_distances_bits.size();i++)fprintf(stderr,"%llu ",last_distances_bits[i]);
-	  last_distance = distances[19];
-	  fprintf(stderr,"%d %d",last_distance,distances.size());
-	  exit(1);
-	  for(pos = 0; pos < length - last_char2end_len[charater]; pos++){
-		key = read_position_value(reference_info.pac,pos);
-		//fprintf(stderr, "%c",debug_array[key]);
-	  }
-	//#define  LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
-	#ifdef LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
 
-	#endif
-	}
+		  DistancesInfo distances_info;
+		  distances_info.last_distance = distances[distances.size()-1];
+		  distances_info.disances_bits =last_distances_bits;
+		  for(int i=0;i< distances.size() ;i++) fprintf(stderr, "%d ",distances[i]);
+		  //fprintf(stderr, "last: %llu ",  distances_info.last_distance);
+
+
+		  int _distance = 0;
+		  for(pos = shift+1; pos < 1000/*length - last_char2end_len[charater]*/; pos++){
+			key = read_position_value(reference_info.pac,pos);
+			if (key == charater){
+				distances_info = get_increase_decrease(distances_info,_distance);
+				fprintf(stderr, "%d\n",_distance);
+				_distance = 0;
+			}
+			_distance++;
+		  }
+		//#define  LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
+		#ifdef LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
+
+		#endif
+		}
+	}//end if
 }
 
 
