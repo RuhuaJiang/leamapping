@@ -120,14 +120,13 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 		  distances_info.disances_bits =last_distances_bits;
 		  for(int i=0;i< distances.size() ;i++) fprintf(stderr, "%d ",distances[i]);
 		  //fprintf(stderr, "last: %llu ",  distances_info.last_distance);
-
-
 		  int _distance = 0;
 		  for(pos = shift+1; pos < 1000/*length - last_char2end_len[charater]*/; pos++){
 			key = read_position_value(reference_info.pac,pos);
+			fprintf(stderr, "%d\n",key);
 			if (key == charater){
 				distances_info = get_increase_decrease(distances_info,_distance);
-				fprintf(stderr, "%d\n",_distance);
+				//fprintf(stderr, "%d\n",_distance);
 				_distance = 0;
 			}
 			_distance++;
