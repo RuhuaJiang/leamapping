@@ -28,24 +28,23 @@ inline uint32_t get_kmer_length(int64_t l_pac)
 	//FIXME need more complex function
 	uint32_t kmer_len;
 	if(l_pac < 100000 )
-		kmer_len = 2;
+		kmer_len = 20;
 	else
-		kmer_len = 30;
+		kmer_len = 31;
 	return kmer_len;
 }
-//0 3 0 1 2 0 0 0 0 0 11 2 0
-//Returns a number,
-static DistancesInfo get_increase_decrease(DistancesInfo distances_info, uint64_t distance){
 
-	DistancesInfo dis_info;
-	dis_info = distances_info;
-	dis_info.disances_bits.pop_front();
-	if( distances_info.last_distance <= distance)
-		dis_info.disances_bits.push_back(0);
-	else
-		dis_info.disances_bits.push_back(1);
-	dis_info.last_distance = distance;
-	return dis_info;
+static uint64_t look_ahead(uint64_t start_pos, int charater, uint8_t *seq){
+	uint64_t distance = 1;
+	uint8_t key;
+	while(1){
+		  key = read_position_value(seq,start_pos + distance);
+		  if(key == charater ){
+			  return distance;
+		  }
+		  else
+			  distance +=1;
+	 }
 }
 
 static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* kmer_position_table)
@@ -56,8 +55,6 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 	uint32_t last_char2end_len[4]; // A C G T order
 
 	char debug_array[4] = {'A','C','G','T'};
-
-
 
 	//Only index forward sequence
 	if (! opt.index_parameter.index_reverse_complement)
@@ -77,10 +74,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 				break;
 			  }
 		  }
-
 	  }// end for
-
-
 
 
 	  {
@@ -100,13 +94,13 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 				  //fprintf(stderr, "k:%llu ",key);
 				  if (key == charater){
 					distances.push_back(distance-1);
+
 					//fprintf(stderr, "d:%llu\n",distance);
 					distance = 0;
 					k--;
 				  }
 				  if(k == 0)break;
 			  }
-
 			  for(uint i=0;i< distances.size() -1;i++){
 				  if( distances[i] <= distances[i+1])
 					  last_distances_bits.push_back(0);
@@ -115,28 +109,74 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 			  }
 		  }
 
-		  DistancesInfo distances_info;
-		  distances_info.last_distance = distances[distances.size()-1];
-		  distances_info.disances_bits =last_distances_bits;
-		  for(int i=0;i< distances.size() ;i++) fprintf(stderr, "%d ",distances[i]);
-		  //fprintf(stderr, "last: %llu ",  distances_info.last_distance);
-		  int _distance = 0;
-		  for(pos = shift+1; pos < 1000/*length - last_char2end_len[charater]*/; pos++){
-			key = read_position_value(reference_info.pac,pos);
-			fprintf(stderr, "%d\n",key);
-			if (key == charater){
-				distances_info = get_increase_decrease(distances_info,_distance);
-				//fprintf(stderr, "%d\n",_distance);
-				_distance = 0;
-			}
-			_distance++;
+		  std::list<uint8_t>::iterator iter;
+		  for(iter = last_distances_bits.begin(); iter !=last_distances_bits.end(); iter++ )
+		  {
+		  	fprintf(stderr, "%d ", *iter);
 		  }
-		//#define  LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
-		#ifdef LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
+		  //fprintf(stderr, "%d",distances[distances.size()-1]);
+		  fprintf(stderr, "\n");
 
+		  fprintf(stderr, "start... k %llu table_len: %llu\n",opt.index_parameter.kmer_len, opt.kmer_table_len);
+
+		  DistancesInfo distances_info;
+		  uint32_t table_key ,debug_total=0;
+		  pos = shift+1;
+		  uint64_t last_distance = distances[distances.size()-1];
+		  while(pos < 1000/*length - last_char2end_len[charater]*/){
+			  //look_ahead
+			  distance = look_ahead(pos , charater, reference_info.pac);
+			  debug_total +=1;
+			  pos = pos + distance;
+			  std::list<uint8_t>::iterator  iter;
+			  for(iter = last_distances_bits.begin(); iter !=last_distances_bits.end(); iter++ )
+			  {
+			  		fprintf(stderr, "%d", *iter);
+			  }
+			  fprintf(stderr, "\nafter:\n");
+			  //then remove first
+			  last_distances_bits.pop_front();
+			  for(iter = last_distances_bits.begin(); iter !=last_distances_bits.end(); iter++ )
+			  {
+			  		fprintf(stderr, "%d", *iter);
+			  }
+			  fprintf(stderr, "\n");
+			  if(last_distance <= distance ) last_distances_bits.push_back(0);
+			  else last_distances_bits.push_back(1);
+			  fprintf(stderr, "%llu", distance);
+			  last_distance = distance;
+
+			  table_key = list2decimal(distances_info.disances_bits);
+			  kmer_position_table[table_key] +=1;
+
+			  fprintf(stderr, "\n");
+
+		  }
+
+
+		#define  LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
+		#ifdef LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
+		  uint32_t countDistinct =0,countOccur = 0;
+		  uint32_t sum = 0;
+		  for(uint32_t i = 0; i < opt.kmer_table_len-1; ++i){
+			  if(i % 50000000 == 0) fprintf(stderr,"%llu cell processed \n",i);
+			  if (kmer_position_table[i] != 0) {
+				  countOccur +=1;
+				  sum +=kmer_position_table[i];
+				  //fprintf(stdout, "%s   %llu  %llu \n",int2bin(i, NULL), i,kmer_position_table[i]);
+				  }
+			  if (kmer_position_table[i] == 1) countDistinct +=1;
+
+		  }//for
+
+		  fprintf(stderr,"kmer_position_table[395554] %llu  \n",kmer_position_table[395554]);
+		  fprintf(stderr, "total cell:%llu\n",opt.kmer_table_len-1);
+		  fprintf(stderr, "total occur:%llu   %llu\n",debug_total,sum);
+		  fprintf(stderr, "occur %llu distinct:%llu   percentage: %f",countOccur, countDistinct,(float)countDistinct/countOccur);
 		#endif
 		}
 	}//end if
+	//fprintf(stderr, "success! \n");
 }
 
 
@@ -160,7 +200,7 @@ void lea_index_region_length(char *indexFile, Options opt){
 
 	//Adjusts parameter based on reference length
 	opt.index_parameter.kmer_len = get_kmer_length(reference_info.l_pac);
-	opt.kmer_table_len =  pow(2,opt.index_parameter.kmer_len);
+	opt.kmer_table_len =  pow(2,(opt.index_parameter.kmer_len-1))+10;
 	opt.index_parameter.index_reverse_complement = false;
 	opt.index_parameter.distinct_level = 1;
 

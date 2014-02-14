@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <list>
 #include <stdio.h>
 
 char *int2bin(unsigned n, char *buf) {
@@ -50,4 +51,15 @@ uint8_t read_position_value(uint8_t *seq, uint8_t pos){
 	//fprintf(stderr,"index:%d shift:%d",index,shift);
 	twoBits= read2bits(seq[index], shift);
 	return twoBits;
+}
+
+uint32_t list2decimal(std::list<uint8_t> lst ){
+	uint32_t result = 0;
+	std::list<uint8_t>::iterator  iter;
+	for(iter = lst.begin(); iter != lst.end(); iter++ )
+	{
+		result <<=1;
+		result += *iter;
+	}
+	return result;
 }
