@@ -91,7 +91,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 	    */
 
 	   //Find first k number of character
-	   int character = 0;
+	   int character = 0; //"AA"
 	   uint64_t start_pos=0, distance, debug_total=0;
 	   std::vector <uint64_t> distances;
 	   std::list <uint8_t> bit_list;
