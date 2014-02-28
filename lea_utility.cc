@@ -43,13 +43,29 @@ uint8_t read2bits(uint8_t byte, uint8_t pos) {
 
 
 //Returns value at given position of given 2-bit per char presentation of sequence
-uint8_t read_position_value(uint8_t *seq, uint8_t pos){
+uint8_t read_position_value_helper(uint8_t *seq, uint64_t pos){
 	uint32_t index;
 	uint8_t shift,twoBits;
 	index = pos / 4 ;
 	shift = (pos % 4)*2;
 	//fprintf(stderr,"index:%d shift:%d",index,shift);
 	twoBits= read2bits(seq[index], shift);
+	return twoBits;
+}
+//Returns value at given position, read k charaters. Each character is in 2-bit reprensentation. k is max 4 here
+uint8_t read_position_value(uint8_t *seq, uint64_t pos, int k){
+	uint8_t twoBits = 0;
+	if(k > 4 || k<1)
+	{
+		fprintf(stderr,"k not proper, should [1, 4] \n");
+		 exit(1);
+	}
+	//fprintf(stderr,"pos%llu ",pos);
+	for(int i = 0; i<k; i++){
+		twoBits <<=2;
+		twoBits +=read_position_value_helper(seq,pos+i);
+		//fprintf(stderr,"twoBits%d ",twoBits);
+	}
 	return twoBits;
 }
 

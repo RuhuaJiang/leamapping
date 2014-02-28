@@ -13,6 +13,7 @@
 typedef struct{
 	uint32_t distinct_level;
 	uint32_t kmer_len;
+	uint32_t char_size; // regard char_size number of character as a single character when index
 	bool index_reverse_complement;
 }IndexParam;
 

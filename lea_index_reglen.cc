@@ -30,128 +30,112 @@ inline uint32_t get_kmer_length(int64_t l_pac)
 	if(l_pac < 100000 )
 		kmer_len = 20;
 	else
-		kmer_len = 31;
+		kmer_len = 20;
 	return kmer_len;
 }
 
-static uint64_t look_ahead(uint64_t start_pos, int charater, uint8_t *seq){
-	uint64_t distance = 1;
+
+/*Returns the distance from start_pos to the next position that the charaters
+ *occurs. charaters contain k character
+ */
+static uint64_t look_ahead(uint64_t start_pos, int charaters, uint8_t *seq, int k){
+	uint64_t distance = 2;
 	uint8_t key;
+	//fprintf(stderr,"k:%d\n",k);
 	while(1){
-		  key = read_position_value(seq,start_pos + distance);
-		  if(key == charater ){
+		 // fprintf(stderr,"start_pos+ distance:%d  ",start_pos+ distance);
+		  key = read_position_value(seq,start_pos+ distance,k);
+		  //fprintf(stderr,"%d\n",key);
+
+		  if(key == charaters ){
+			  fprintf(stderr,"dis:%d\n",distance);
+
 			  return distance;
 		  }
 		  else
-			  distance +=1;
+			  distance += k;
 	 }
 }
 
 static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* kmer_position_table)
 {
 	init_table(opt,&kmer_position_table);
-	uint64_t pos, length;
+	uint64_t length;
 	uint8_t key;
-	uint32_t last_char2end_len[4]; // A C G T order
+	uint64_t last_char2end_len[4]; // A C G T order
 
 	char debug_array[4] = {'A','C','G','T'};
 
 	//Only index forward sequence
 	if (! opt.index_parameter.index_reverse_complement)
 	{
-	  length = reference_info.contain_reverse_complement ? static_cast<uint64_t>(reference_info.l_pac/2) : static_cast<uint64_t>(reference_info.l_pac);
+	   length = reference_info.contain_reverse_complement ? static_cast<uint64_t>(reference_info.l_pac/2) : static_cast<uint64_t>(reference_info.l_pac);
 
-	  //find last position that char occur, get how far it is from end
-	  for(int charater = 0;charater < 4; charater++){
+	   //find last position that char occur, get how far it is from end
+	   //FIXME new idea, 2014-2-28, charater can be two base sequence, say "AA"
+
+	   /*
+	   for(int charater = 0;charater < 4; charater++){
 		  //fprintf(stderr, "working ");
 		  uint64_t i = 0;
 		  while(1){
 			  i ++;
 			  key = read_position_value(reference_info.pac, length -1 - i);
-		  	  //fprintf(stderr, "%c",debug_array[key]);
+			  //fprintf(stderr, "%c",debug_array[key]);
 			  if (key == charater){
 				last_char2end_len[charater] = i;
 				break;
 			  }
 		  }
-	  }// end for
+	   }// end for
+	    */
 
+	   //Find first k number of character
+	   int character = 0;
+	   uint64_t start_pos=0, distance, debug_total=0;
+	   std::vector <uint64_t> distances;
+	   std::list <uint8_t> bit_list;
+	   for(int i= 0; i < opt.index_parameter.kmer_len; i++){
+		   distance = look_ahead(start_pos, character,reference_info.pac, opt.index_parameter.char_size);
+		   start_pos = start_pos + distance;
+		   distances.push_back(distance);
+		   fprintf(stderr, "%d ", distance);
+	   }
 
-	  {
-		  //FIXME actually we need build 4 table, right now only consider the table using A
-		  //for each position, generate sliced kmers
-		  int charater = 0;
-		  uint64_t shift =0, distance = 0;
-		  std::list<uint8_t> last_distances_bits;
-		  std::vector<uint64_t> distances;
-		  {
-			  //Find firt k number of charater
-			  int k = opt.index_parameter.kmer_len;
-			  while(1){
-				  shift++;
-				  distance ++;
-				  key = read_position_value(reference_info.pac, shift);
-				  //fprintf(stderr, "k:%llu ",key);
-				  if (key == charater){
-					distances.push_back(distance-1);
+	   for(int i = 0; i< distances.size()-1; i++){
+		   if(distances[i] <= distances[i+1])
+			   bit_list.push_back(0);
+		   else
+			   bit_list.push_back(1);
+	   }
+	   fprintf(stderr, "\n");
+	   //TEST
 
-					//fprintf(stderr, "d:%llu\n",distance);
-					distance = 0;
-					k--;
-				  }
-				  if(k == 0)break;
-			  }
-			  for(uint i=0;i< distances.size() -1;i++){
-				  if( distances[i] <= distances[i+1])
-					  last_distances_bits.push_back(0);
-				  else
-					  last_distances_bits.push_back(1);
-			  }
-		  }
+	   std::list<uint8_t>::iterator  iter;
+	   for(iter = bit_list.begin(); iter !=bit_list.end(); iter++ )
+	   {
+		   fprintf(stderr, "%d", *iter);
+	   }
 
-		  std::list<uint8_t>::iterator iter;
-		  for(iter = last_distances_bits.begin(); iter !=last_distances_bits.end(); iter++ )
-		  {
-		  	fprintf(stderr, "%d ", *iter);
-		  }
-		  //fprintf(stderr, "%d",distances[distances.size()-1]);
-		  fprintf(stderr, "\n");
+	   fprintf(stderr, "\n");
+	   uint64_t last_distance = distance;
+	   uint32_t table_key;
+	   while(start_pos < length - last_char2end_len[character]){
+				 //look_ahead
+		   	     if(start_pos % 50000000 == 0) fprintf(stderr, "%llu pos processed\n", start_pos);
+				 distance = look_ahead(start_pos , character, reference_info.pac,2);
+				 debug_total +=1;
+				 start_pos = start_pos + distance;
 
-		  fprintf(stderr, "start... k %llu table_len: %llu\n",opt.index_parameter.kmer_len, opt.kmer_table_len);
-
-		  DistancesInfo distances_info;
-		  uint32_t table_key ,debug_total=0;
-		  pos = shift+1;
-		  uint64_t last_distance = distances[distances.size()-1];
-		  while(pos < 1000/*length - last_char2end_len[charater]*/){
-			  //look_ahead
-			  distance = look_ahead(pos , charater, reference_info.pac);
-			  debug_total +=1;
-			  pos = pos + distance;
-			  std::list<uint8_t>::iterator  iter;
-			  for(iter = last_distances_bits.begin(); iter !=last_distances_bits.end(); iter++ )
-			  {
-			  		fprintf(stderr, "%d", *iter);
-			  }
-			  fprintf(stderr, "\nafter:\n");
-			  //then remove first
-			  last_distances_bits.pop_front();
-			  for(iter = last_distances_bits.begin(); iter !=last_distances_bits.end(); iter++ )
-			  {
-			  		fprintf(stderr, "%d", *iter);
-			  }
-			  fprintf(stderr, "\n");
-			  if(last_distance <= distance ) last_distances_bits.push_back(0);
-			  else last_distances_bits.push_back(1);
-			  fprintf(stderr, "%llu", distance);
-			  last_distance = distance;
-
-			  table_key = list2decimal(distances_info.disances_bits);
-			  kmer_position_table[table_key] +=1;
-
-			  fprintf(stderr, "\n");
-
-		  }
+				 bit_list.pop_front();
+				 if( last_distance <= distance)
+					 bit_list.push_back(0);
+				 else
+					 bit_list.push_back(1);
+				 table_key = list2decimal(bit_list);
+				 kmer_position_table[table_key] +=1;
+				 last_distance = distance;
+		 }
 
 
 		#define  LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
@@ -159,23 +143,22 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 		  uint32_t countDistinct =0,countOccur = 0;
 		  uint32_t sum = 0;
 		  for(uint32_t i = 0; i < opt.kmer_table_len-1; ++i){
-			  if(i % 50000000 == 0) fprintf(stderr,"%llu cell processed \n",i);
+			  if(i % 500000000 == 0) fprintf(stderr,"%llu cell processed \n",i);
 			  if (kmer_position_table[i] != 0) {
 				  countOccur +=1;
 				  sum +=kmer_position_table[i];
-				  //fprintf(stdout, "%s   %llu  %llu \n",int2bin(i, NULL), i,kmer_position_table[i]);
+				  fprintf(stdout, "%d\n",kmer_position_table[i]);
 				  }
 			  if (kmer_position_table[i] == 1) countDistinct +=1;
-
 		  }//for
 
-		  fprintf(stderr,"kmer_position_table[395554] %llu  \n",kmer_position_table[395554]);
-		  fprintf(stderr, "total cell:%llu\n",opt.kmer_table_len-1);
-		  fprintf(stderr, "total occur:%llu   %llu\n",debug_total,sum);
-		  fprintf(stderr, "occur %llu distinct:%llu   percentage: %f",countOccur, countDistinct,(float)countDistinct/countOccur);
+		fprintf(stderr,"kmer %d\n",opt.index_parameter.kmer_len);
+		fprintf(stderr, "total cell:%llu\n",opt.kmer_table_len-1);
+		fprintf(stderr, "total occur %llu \n", debug_total);
+		fprintf(stderr, "different occur %llu distinct:%llu   percentage: %f",countOccur, countDistinct,(float)countDistinct/countOccur);
 		#endif
-		}
-	}//end if
+
+	}//end if only index forward sequence
 	//fprintf(stderr, "success! \n");
 }
 
@@ -188,7 +171,7 @@ void lea_index_region_length(char *indexFile, Options opt){
 
 	//Parses reference in FASTA file
 	gzFile fp = xzopen(indexFile, "r");
-	reference_info.l_pac  = bns_fasta2bntseq(fp, indexFile, forward_only);
+	reference_info.l_pac  = bns_fasta2bntseq(fp, indexFile, forward_only); // then contain reverse_complement = true
 	reference_info.contain_reverse_complement = true;
 	reference_info.bns = bns_restore(indexFile);
 	reference_info.pac =  static_cast<uint8_t *>(calloc(reference_info.bns->l_pac / 4 + 1, 1));
@@ -196,6 +179,8 @@ void lea_index_region_length(char *indexFile, Options opt){
 				fprintf(stderr, "[LEA_INDEX] Insufficient Memory!\n");
 				exit(1);
 	}
+
+
 	fread(reference_info.pac, 1, reference_info.bns->l_pac / 4 + 1, reference_info.bns->fp_pac);
 
 	//Adjusts parameter based on reference length
@@ -203,6 +188,7 @@ void lea_index_region_length(char *indexFile, Options opt){
 	opt.kmer_table_len =  pow(2,(opt.index_parameter.kmer_len-1))+10;
 	opt.index_parameter.index_reverse_complement = false;
 	opt.index_parameter.distinct_level = 1;
+	opt.index_parameter.char_size = 2;
 
 	//Builds the kmer position mapping table
 	TableCell *kmer_position_table;
