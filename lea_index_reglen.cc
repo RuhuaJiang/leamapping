@@ -28,7 +28,7 @@ inline uint32_t get_kmer_length(int64_t l_pac)
 	//FIXME need more complex function
 	uint32_t kmer_len;
 	if(l_pac < 100000 )
-		kmer_len = 20;
+		kmer_len = 5;
 	else
 		kmer_len = 20;
 	return kmer_len;
@@ -39,7 +39,7 @@ inline uint32_t get_kmer_length(int64_t l_pac)
  *occurs. charaters contain k character
  */
 static uint64_t look_ahead(uint64_t start_pos, int charaters, uint8_t *seq, int k){
-	uint64_t distance = 2;
+	uint64_t distance = k;
 	uint8_t key;
 	//fprintf(stderr,"k:%d\n",k);
 	while(1){
@@ -92,15 +92,18 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 
 	   //Find first k number of character
 	   int character = 0; //"AA"
-	   uint64_t start_pos=0, distance, debug_total=0;
+
 	   std::vector <uint64_t> distances;
 	   std::list <uint8_t> bit_list;
-	   for(int i= 0; i < opt.index_parameter.kmer_len; i++){
+	   int step = opt.index_parameter.char_size;
+	   uint64_t start_pos=0, distance, debug_total=0;
+	   for(int i= 0; i < opt.index_parameter.kmer_len; i = i + step){
 		   distance = look_ahead(start_pos, character,reference_info.pac, opt.index_parameter.char_size);
 		   start_pos = start_pos + distance;
 		   distances.push_back(distance);
 		   fprintf(stderr, "%d ", distance);
 	   }
+	   exit(1);
 
 	   for(int i = 0; i< distances.size()-1; i++){
 		   if(distances[i] <= distances[i+1])
