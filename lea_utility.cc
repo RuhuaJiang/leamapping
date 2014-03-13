@@ -58,7 +58,7 @@ uint8_t read_position_value(uint8_t *seq, uint64_t pos, int k){
 	if(k > 4 || k<1)
 	{
 		fprintf(stderr,"k not proper, should [1, 4] \n");
-		 exit(1);
+		exit(1);
 	}
 	//fprintf(stderr,"pos%llu ",pos);
 	for(int i = 0; i<k; i++){
@@ -68,6 +68,7 @@ uint8_t read_position_value(uint8_t *seq, uint64_t pos, int k){
 	}
 	return twoBits;
 }
+
 
 uint32_t list2decimal(std::list<uint8_t> lst ){
 	uint32_t result = 0;
@@ -79,3 +80,61 @@ uint32_t list2decimal(std::list<uint8_t> lst ){
 	}
 	return result;
 }
+
+
+//Returns the kmer(seed) length, given the length
+//of the reference
+uint32_t get_kmer_length(int64_t l_pac)
+{
+	//FIXME need more complex function
+	uint32_t kmer_len;
+	if(l_pac < 100000 )
+		kmer_len = 5;
+	else
+		kmer_len = 8;
+	return kmer_len;
+}
+
+
+/*Returns the distance from start_pos to the next position that the charaters
+ *occurs. charaters contain k character
+ */
+uint64_t look_ahead(uint64_t start_pos, int charaters, uint8_t *seq, int k){
+	uint64_t distance = k;
+	uint8_t key;
+
+	while(1){
+		  // fprintf(stderr,"start_pos+ distance:%d  ",start_pos+ distance);
+		  key = read_position_value(seq,start_pos+distance,k);
+		  //fprintf(stderr,"key: %d\n",key);
+		  if(key == charaters ){
+			  //fprintf(stderr,"dis:%d\n",distance);
+			  return distance;
+		  }
+		  else
+			  distance++;
+	 }
+}
+
+
+//Returns a integer. Input is a size k list;
+uint32_t vector_to_int(std::list <uint64_t> distances){
+
+	if(distances.size() > 8){
+		fprintf(stderr,"list to large, should smaller than or equal to 8\n");
+		exit(1);
+	}
+	 std::list<uint64_t>::iterator  iter;
+	 uint64_t val;
+	 uint32_t result = 0;
+	 for(iter = distances.begin(); iter !=distances.end(); iter++ )
+	 {
+		 result <<=4;
+		 val = (*iter) > static_cast<uint64_t>(31) ? static_cast<uint64_t>(15):((*iter)/2);
+		 result += val;
+	 }
+	 return result;
+}
+
+
+

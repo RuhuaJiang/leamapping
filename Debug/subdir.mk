@@ -8,15 +8,19 @@ C_SRCS += \
 ../utils.c 
 
 CC_SRCS += \
+../lea_aln.cc \
 ../lea_index.cc \
 ../lea_index_reglen.cc \
+../lea_seqio.cc \
 ../lea_utility.cc \
 ../main.cc 
 
 OBJS += \
 ./bntseq.o \
+./lea_aln.o \
 ./lea_index.o \
 ./lea_index_reglen.o \
+./lea_seqio.o \
 ./lea_utility.o \
 ./main.o \
 ./utils.o 
@@ -26,8 +30,10 @@ C_DEPS += \
 ./utils.d 
 
 CC_DEPS += \
+./lea_aln.d \
 ./lea_index.d \
 ./lea_index_reglen.d \
+./lea_seqio.d \
 ./lea_utility.d \
 ./main.d 
 

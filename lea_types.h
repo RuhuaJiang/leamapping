@@ -9,7 +9,9 @@
 #define LEA_TYPES_H_
 #include <stdint.h>
 #include "bntseq.h"
-
+#include "utils.h"
+#include "kseq.h"
+KSEQ_INIT(gzFile, gzread)
 typedef struct{
 	uint32_t distinct_level;
 	uint32_t kmer_len;
@@ -21,6 +23,14 @@ typedef struct{
 typedef struct{
 	IndexParam  index_parameter;
 	uint64_t kmer_table_len;
+
+	uint32_t chunck_size;
+
+	int a; //Score of a match [1]
+	int b; //Mismatch penalty [3]
+	int q; //Gap open penalty [5]
+	int r; //Gap extension penalty. The penalty for a contiguous gap of size k is q+k*r. [2]
+	int bw; //-w INT	 Band width in the banded alignment [33]
 }Options;
 
 
@@ -28,9 +38,32 @@ typedef struct{
 	uint8_t *pac;
 	bntseq_t *bns;
 	int64_t l_pac;
+	char *ref_name;
 	bool contain_reverse_complement;
 }ReferenceInfo;
 
+typedef uint16_t cigar_t;
+typedef struct{
+	char *name;
+	ubyte_t *seq,*qual;
+	uint32_t aln_pos;
+	cigar_t cigar;
+	uint32_t len;
+	uint32_t qual_len;
+    /*
+	int32_t *shifts; //Positions that has distinct Kmer
+	int32_t *positions; //Kmer position in reference
+	uint32_t kmerN; //number of distinct kmer.  Always < =  opt->firstZ
+	*/
+
+}read_t;
+
+typedef struct{
+	// for fastq input
+	kseq_t *ks;
+}seqio_t;
+
+const int ARRAY_LEN = 500 ;
 typedef uint32_t TableCell;
 
 #endif /* LEA_TYPES_H_ */

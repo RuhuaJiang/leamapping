@@ -21,13 +21,15 @@
 
 #include "bntseq.h"
 #include "lea_index.h"
+#include "lea_aln.h"
+#include "lea_types.h"
 
 int main(int argc, char *argv[])
 {
+	Options options;
 	int ret;
-
-	if (strcmp(argv[1], "aln") == 0);
-		//ret = lea_map(argv[2], argv[3],options);
+	if (strcmp(argv[1], "aln") == 0)
+		ret = lea_map(argv[2], argv[3],options);
 	if (strcmp(argv[1], "index") == 0){
 		ret = lea_index(argc-1, argv+1);
 	}
