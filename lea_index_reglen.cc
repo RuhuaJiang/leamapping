@@ -62,7 +62,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 	   int step = opt.index_parameter.char_size;
 	   uint64_t start_pos=0, distance, debug_total=0;
 	   for(int i= 0; i < opt.index_parameter.kmer_len; ++i){
-		   distance = look_ahead(start_pos, character,reference_info.pac, opt.index_parameter.char_size);
+		   distance = look_ahead(start_pos, character,reference_info.pac, opt.index_parameter.char_size,0);
 		   start_pos = start_pos + distance;
 		   distances.push_back(distance);
 		   fprintf(stderr, "%d ", start_pos);
@@ -77,7 +77,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 	   while(start_pos < length - 20){
 				 //look_ahead
 		   	     if(start_pos % 50000000 == 0) fprintf(stderr, "%llu pos processed\n", start_pos);
-				 distance = look_ahead(start_pos , character, reference_info.pac,2);
+				 distance = look_ahead(start_pos , character, reference_info.pac,opt.index_parameter.char_size,0);
 				 debug_total +=1;
 				 start_pos = start_pos + distance;
 
@@ -94,15 +94,22 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 				 */
 				 table_key = vector_to_int(distances);
 
-				 kmer_position_table[table_key] +=1;
-				 /*
+				 //kmer_position_table[table_key] +=1;
+
 				 if ( kmer_position_table[table_key] == 0 )
 					  kmer_position_table[table_key] =  static_cast<uint32_t>(start_pos);
+				 else if (kmer_position_table[table_key] != NOT_UNIQUE)
+				 {
+				 }
+				 else if(kmer_position_table[table_key] != 0 && kmer_position_table[table_key] != NOT_UNIQUE)
+				 {
+					 kmer_position_table[table_key] = NOT_UNIQUE;
+				 }
 				 else
-				      continue;
-				      */
-
-
+				 {
+					 fprintf(stderr,"[Index Ref] ERRO! \n");
+					 exit(1);
+				 }
 		 }
 
 	    //dump
@@ -117,7 +124,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 			fprintf(stderr, "[dmap index]  write success! %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
 		}
 
-		#define  LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
+		//#define  LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
 		#ifdef LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
 		  uint32_t countDistinct =0,countOccur = 0;
 		  uint32_t sum = 0;
@@ -136,7 +143,6 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 		fprintf(stderr, "total occur %llu \n", debug_total);
 		fprintf(stderr, "different occur %llu distinct:%llu   percentage: %f",countOccur, countDistinct,(float)countDistinct/countOccur);
 		#endif
-
 	}//end if only index forward sequence
 
 }

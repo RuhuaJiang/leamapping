@@ -16,6 +16,7 @@ typedef struct{
 	uint32_t distinct_level;
 	uint32_t kmer_len;
 	uint32_t char_size; // regard char_size number of character as a single character when index
+	uint32_t char_int;
 	bool index_reverse_complement;
 }IndexParam;
 
@@ -62,7 +63,7 @@ typedef struct{
 	// for fastq input
 	kseq_t *ks;
 }seqio_t;
-
+const uint32_t NOT_UNIQUE = (uint32_t)0xFFFFFFFF -1;
 const int ARRAY_LEN = 500 ;
 typedef uint32_t TableCell;
 
