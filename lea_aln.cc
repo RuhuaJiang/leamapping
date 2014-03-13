@@ -54,9 +54,13 @@ static int lea_map_single_seq(ReferenceInfo reference_info , TableCell *kmer_pos
 		table_key = vector_to_int(distances);
 
 		position = kmer_position_table[table_key];
-		fprintf(stderr,"%d\t%d\n", table_key,position);
+		//fprintf(stderr,"%d\t%d\n", table_key,position);
 		if(position !=0 && position != NOT_UNIQUE)
-		  fprintf(stderr,"%d\n", position);
+		{
+		   fprintf(stderr,"%d\n", position);
+		   break;
+		}
+
 	}
 
 	return 0;

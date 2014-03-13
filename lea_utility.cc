@@ -104,7 +104,7 @@ uint32_t get_kmer_length(int64_t l_pac)
  *occurs. charaters contain k character
  */
 uint64_t look_ahead(uint64_t start_pos, int charaters, uint8_t *seq, int k, int bit_byte){
-	uint64_t distance = k;
+	uint64_t distance = 1;
 	uint8_t key;
 
 	while(1){

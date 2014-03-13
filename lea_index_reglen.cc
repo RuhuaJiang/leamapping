@@ -65,8 +65,9 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 		   distance = look_ahead(start_pos, character,reference_info.pac, opt.index_parameter.char_size,0);
 		   start_pos = start_pos + distance;
 		   distances.push_back(distance);
-		   fprintf(stderr, "%d ", start_pos);
+		   fprintf(stderr, "%d ", distance);
 	   }
+	   fprintf(stderr, "\n");
 
 	   std::list<uint64_t>::iterator  iter;
 
@@ -84,18 +85,18 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 				 //fprintf(stderr, "%d ", start_pos);
 				 distances.push_back(distance);
 				 distances.pop_front();
-				 /*
+
 				 for(iter = distances.begin(); iter !=distances.end(); iter++ )
 			     {
 				   fprintf(stderr, "%d ", *iter);
 			     }
 				 fprintf(stderr, "\n");
 				 vector_to_int(distances);
-				 */
+
 				 table_key = vector_to_int(distances);
 
-				 //kmer_position_table[table_key] +=1;
-
+				 kmer_position_table[table_key] +=1;
+				 /*
 				 if ( kmer_position_table[table_key] == 0 )
 					  kmer_position_table[table_key] =  static_cast<uint32_t>(start_pos);
 				 else if (kmer_position_table[table_key] != NOT_UNIQUE)
@@ -110,6 +111,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 					 fprintf(stderr,"[Index Ref] ERRO! \n");
 					 exit(1);
 				 }
+				 */
 		 }
 
 	    //dump
@@ -124,7 +126,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 			fprintf(stderr, "[dmap index]  write success! %.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC);
 		}
 
-		//#define  LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
+		#define  LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
 		#ifdef LEA_INDEX_REGLEN_BUILD_TABLE_DEBUG
 		  uint32_t countDistinct =0,countOccur = 0;
 		  uint32_t sum = 0;
