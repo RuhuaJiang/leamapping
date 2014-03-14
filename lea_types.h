@@ -67,4 +67,10 @@ const uint32_t NOT_UNIQUE = (uint32_t)0xFFFFFFFF -1;
 const int ARRAY_LEN = 500 ;
 typedef uint32_t TableCell;
 
+typedef struct{
+	uint32_t position;
+	uint32_t shift;
+	char strand; //'+' +strand, '-' -strand
+
+}PositionShift;
 #endif /* LEA_TYPES_H_ */

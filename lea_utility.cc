@@ -95,7 +95,7 @@ uint32_t get_kmer_length(int64_t l_pac)
 	if(l_pac < 100000 )
 		kmer_len = 5;
 	else
-		kmer_len = 8;
+		kmer_len = 7;
 	return kmer_len;
 }
 

@@ -85,24 +85,27 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 				 //fprintf(stderr, "%d ", start_pos);
 				 distances.push_back(distance);
 				 distances.pop_front();
-
+				 /*
 				 for(iter = distances.begin(); iter !=distances.end(); iter++ )
 			     {
 				   fprintf(stderr, "%d ", *iter);
 			     }
 				 fprintf(stderr, "\n");
+				 */
 				 vector_to_int(distances);
 
 				 table_key = vector_to_int(distances);
+				 //fprintf(stderr, "%d ", *iter);
 
-				 kmer_position_table[table_key] +=1;
-				 /*
-				 if ( kmer_position_table[table_key] == 0 )
+				 //kmer_position_table[table_key] +=1;
+
+
+				 if ( kmer_position_table[table_key] == 0 ) // state 0 -> state 1
 					  kmer_position_table[table_key] =  static_cast<uint32_t>(start_pos);
-				 else if (kmer_position_table[table_key] != NOT_UNIQUE)
+				 else if (kmer_position_table[table_key] == NOT_UNIQUE)  // state 2 -> state 2
 				 {
 				 }
-				 else if(kmer_position_table[table_key] != 0 && kmer_position_table[table_key] != NOT_UNIQUE)
+				 else if(kmer_position_table[table_key] != 0 && kmer_position_table[table_key] != NOT_UNIQUE)  // state 1 -> state 2
 				 {
 					 kmer_position_table[table_key] = NOT_UNIQUE;
 				 }
@@ -111,7 +114,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 					 fprintf(stderr,"[Index Ref] ERRO! \n");
 					 exit(1);
 				 }
-				 */
+
 		 }
 
 	    //dump
@@ -137,7 +140,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 				  sum +=kmer_position_table[i];
 				  //fprintf(stdout, "%d\n",kmer_position_table[i]);
 				  }
-			  if (kmer_position_table[i] == 1) countDistinct +=1;
+			  if (kmer_position_table[i] != 0 && kmer_position_table[i] != NOT_UNIQUE) countDistinct +=1;
 		  }//for
 		fprintf(stderr,"reference_info.l_pac %d\n",reference_info.l_pac);
 		fprintf(stderr,"kmer %d\n",opt.index_parameter.kmer_len);
