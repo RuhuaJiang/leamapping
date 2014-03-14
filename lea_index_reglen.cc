@@ -5,6 +5,7 @@
  *      Author: jiang
  */
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 #include <vector>
 #include <list>
@@ -57,7 +58,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 	    */
 
 	   //Find first k number of character
-	   int character = 0; //"AA"
+	   int character = opt.index_parameter.char_int; //"AA"
 	   std::list <uint64_t> distances;
 	   int step = opt.index_parameter.char_size;
 	   uint64_t start_pos=0, distance, debug_total=0;
@@ -121,7 +122,12 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 	    t = clock();
 	    char *tableFn;
 	    tableFn = (char*)calloc(strlen(reference_info.ref_name) + 10, 1);
-		strcpy(tableFn , reference_info.ref_name);strcat(tableFn,".tb");
+	    fprintf(stderr,"%s",reference_info.ref_name);
+	    char *name_suffix;
+	    name_suffix = (char *) malloc(sizeof(char) * (10));
+	    sprintf(name_suffix, "%d", opt.index_parameter.char_int);
+		strcpy(tableFn , reference_info.ref_name);strcat(tableFn,".tb");strcat(tableFn,name_suffix);
+
 
 		fprintf(stderr, "[dmap index] write index results to file...\n" );
 		if (table_dump(tableFn,kmer_position_table, opt) == 0)
@@ -181,9 +187,18 @@ void lea_index_region_length(char *indexFile, Options opt){
 	opt.index_parameter.distinct_level = 1;
 	opt.index_parameter.char_size = 2;
 
+
+
 	//Builds the kmer position mapping table
-	TableCell *kmer_position_table;
-	build_table(reference_info,opt,kmer_position_table);
+	TableCell *kmer_position_table_AA,*kmer_position_table_CC,*kmer_position_table_GG,*kmer_position_table_TT;
+	opt.index_parameter.char_int =0;
+	build_table(reference_info,opt,kmer_position_table_AA);
+	opt.index_parameter.char_int =5;
+	build_table(reference_info,opt,kmer_position_table_CC);
+	opt.index_parameter.char_int =10;
+	build_table(reference_info,opt,kmer_position_table_GG);
+	opt.index_parameter.char_int =15;
+	build_table(reference_info,opt,kmer_position_table_TT);
 
 }
 

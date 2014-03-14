@@ -73,4 +73,12 @@ typedef struct{
 	char strand; //'+' +strand, '-' -strand
 
 }PositionShift;
+
+typedef struct{
+	TableCell *kmer_position_table_AA;
+	TableCell *kmer_position_table_CC;
+	TableCell *kmer_position_table_GG;
+	TableCell *kmer_position_table_TT;
+}Tables;
+
 #endif /* LEA_TYPES_H_ */

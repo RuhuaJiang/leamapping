@@ -22,8 +22,6 @@ static int count_supported_positions_shifts(ReferenceInfo reference_info , Table
 	uint8_t key;
 	uint32_t character = opt.index_parameter.char_int;
 
-
-
 	while(1){
 		      key =read_position_value(read,read_len-last_distance,opt.index_parameter.char_size,1);
 			  if(key == character ){
@@ -97,16 +95,27 @@ static int count_supported_positions_shifts(ReferenceInfo reference_info , Table
 	return 0;
 }
 
-static int lea_map_single_read(ReferenceInfo reference_info , TableCell *kmer_position_table,read_t *read,Options opt){
+static int lea_map_single_read(ReferenceInfo reference_info , Tables kmer_position_tables,read_t *read,Options opt){
 
 	uint8_t *rvc_read_seq;
 	std::vector<PositionShift> positions_shifts;
-
-	count_supported_positions_shifts(reference_info , kmer_position_table,read->seq,read->len,opt, false, positions_shifts);
 	rvc_read_seq = (uint8_t*)calloc(read->len, 1);
 	for (int _i = 0; _i < read->len; ++_i)
-	rvc_read_seq[read->len - _i - 1] = 3 - read->seq[_i];
-	count_supported_positions_shifts(reference_info , kmer_position_table,rvc_read_seq,read->len,opt, true, positions_shifts);
+			rvc_read_seq[read->len - _i - 1] = 3 - read->seq[_i];
+
+	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_AA,read->seq,read->len,opt, false, positions_shifts);
+	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_AA,rvc_read_seq,read->len,opt, true, positions_shifts);
+
+	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_CC,read->seq,read->len,opt, false, positions_shifts);
+	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_CC,rvc_read_seq,read->len,opt, true, positions_shifts);
+
+	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_GG,read->seq,read->len,opt, false, positions_shifts);
+	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_GG,rvc_read_seq,read->len,opt, true, positions_shifts);
+
+	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_TT,read->seq,read->len,opt, false, positions_shifts);
+	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_TT,rvc_read_seq,read->len,opt, true, positions_shifts);
+
+
 	int count_debug=0;
 
 	if(positions_shifts.size() < 3)
@@ -123,13 +132,13 @@ static int lea_map_single_read(ReferenceInfo reference_info , TableCell *kmer_po
 
 
 }
-static int lea_map_core(ReferenceInfo reference_info , TableCell *kmer_position_table,read_t *readsChunk, uint32_t n_seqs, Options opt) {
+static int lea_map_core(ReferenceInfo reference_info , Tables kmer_position_tables,read_t *readsChunk, uint32_t n_seqs, Options opt) {
 	uint32_t i = 0;
 	read_t  *read;
 
 	while ((uint32_t) i < (uint32_t) n_seqs) {
 		read = &readsChunk[i++]; //A read.
-		lea_map_single_read(reference_info ,kmer_position_table,read,opt);
+		lea_map_single_read(reference_info ,kmer_position_tables,read,opt);
 	}
 	free_read_seq(n_seqs, readsChunk);
 	return 0;
@@ -137,7 +146,7 @@ static int lea_map_core(ReferenceInfo reference_info , TableCell *kmer_position_
 
 int lea_map(char *refFile, char *readsFile, Options opt) {
 	int ret, i;
-	TableCell *kmer_position_table;
+	Tables kmer_position_tables;
 	ReferenceInfo reference_info;
 	char *tableFn;
 	uint32_t total = 0, n_seqs = 0;
@@ -165,9 +174,9 @@ int lea_map(char *refFile, char *readsFile, Options opt) {
 	t = clock();
 	fprintf(stderr, "[dmap_aln] retrieving index info ...\n");
 
-    tableFn = (char*)calloc(strlen(refFile) + 10, 1);
-	strcpy(tableFn, refFile);
-	strcat(tableFn, ".tb");
+
+
+
 	reference_info.pac = static_cast<uint8_t *>(calloc((reference_info.bns->l_pac) / 4 + 1, 1));
 	reference_info.l_pac = reference_info.bns->l_pac;
 
@@ -180,7 +189,27 @@ int lea_map(char *refFile, char *readsFile, Options opt) {
 	fprintf(stderr, "[dmap_aln] number of characters of reference  %llu \n",
 			reference_info.bns->l_pac);
 
-	kmer_position_table = table_restore(tableFn,opt);
+
+	tableFn = (char*)calloc(strlen(refFile) + 10, 1);
+	strcpy(tableFn, refFile);strcat(tableFn, ".tb");strcat(tableFn,"0");
+	kmer_position_tables.kmer_position_table_AA = table_restore(tableFn,opt);
+
+
+	tableFn = (char*)calloc(strlen(refFile) + 10, 1);
+	strcpy(tableFn, refFile);strcat(tableFn, ".tb");strcat(tableFn,"5");
+	kmer_position_tables.kmer_position_table_CC = table_restore(tableFn,opt);
+
+	tableFn = (char*)calloc(strlen(refFile) + 10, 1);
+	strcpy(tableFn, refFile);strcat(tableFn, ".tb");strcat(tableFn,"10");
+	kmer_position_tables.kmer_position_table_GG = table_restore(tableFn,opt);
+
+	tableFn = (char*)calloc(strlen(refFile) + 10, 1);
+	strcpy(tableFn, refFile);strcat(tableFn, ".tb");strcat(tableFn,"15");
+	kmer_position_tables.kmer_position_table_TT = table_restore(tableFn,opt);
+
+
+
+
 	fprintf(stderr, "[dmap_aln] retrieve success! %.2f sec\n",
 			(float) (clock() - t) / CLOCKS_PER_SEC);
 
@@ -201,8 +230,9 @@ int lea_map(char *refFile, char *readsFile, Options opt) {
 	fprintf(stderr, "kmer %d\n",opt.index_parameter.kmer_len);
 	fprintf(stderr, "total cell:%llu\n",opt.kmer_table_len-1);
 	fprintf(stderr, "different occur %llu distinct:%llu   percentage: %f",countOccur, countDistinct,(float)countDistinct/countOccur);
+	exit(1);
 	#endif
-	//exit(1);
+
 
 
 	mapStart = clock();
@@ -238,7 +268,7 @@ int lea_map(char *refFile, char *readsFile, Options opt) {
 
 			fprintf(stderr, "[dmap_aln] read %d sequences ...", total);
 			t = clock();
-			ret = lea_map_core(reference_info , kmer_position_table,readsChunk, n_seqs, opt);
+			ret = lea_map_core(reference_info , kmer_position_tables,readsChunk, n_seqs, opt);
 			fprintf(stderr, "%.2f sec\n",
 					(float) (clock() - t) / CLOCKS_PER_SEC);
 			n_seqs = 0;
@@ -248,13 +278,16 @@ int lea_map(char *refFile, char *readsFile, Options opt) {
 		}
 	}
 	fprintf(stderr, "[dmap_aln] read %d sequences ...\n", total);
-	ret = lea_map_core(reference_info , kmer_position_table,readsChunk, n_seqs, opt);
+	ret = lea_map_core(reference_info , kmer_position_tables,readsChunk, n_seqs, opt);
 
 	fprintf(stderr, "[dmap_aln] map time %.2f sec\n",
 				(float) (clock() - mapStart) / CLOCKS_PER_SEC);
 
 	free(tableFn);
-	free(kmer_position_table);
+	free(kmer_position_tables.kmer_position_table_AA);
+	free(kmer_position_tables.kmer_position_table_CC);
+	free(kmer_position_tables.kmer_position_table_GG);
+	free(kmer_position_tables.kmer_position_table_TT);
 
 	free(seq);
 	return 0;
