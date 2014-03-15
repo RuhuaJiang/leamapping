@@ -12,9 +12,13 @@
 #include <time.h>
 #include <math.h>
 #include <vector>
+#include <map>
+#include <algorithm>
 #include "lea_types.h"
 #include "lea_seqio.h"
 #include "lea_utility.h"
+
+#include <inttypes.h>
 
 static int count_supported_positions_shifts(ReferenceInfo reference_info , TableCell *kmer_position_table,uint8_t *read, uint32_t read_len,Options opt,bool is_rvc, std::vector<PositionShift> &positions_shifts){
 
@@ -77,13 +81,13 @@ static int count_supported_positions_shifts(ReferenceInfo reference_info , Table
 		table_key = vector_to_int(distances);
 		position = kmer_position_table[table_key];
 		//fprintf(stderr,"%d\t%d\n", table_key,position);
-		if(position !=0 /*&& position != NOT_UNIQUE*/)
+		if(position !=0 && position != NOT_UNIQUE)
 		{
 			if(is_rvc)
-				_postion_shift.strand = '-';
+				_postion_shift.position = static_cast<int64_t>(position) *  (-1);
 			else
-				_postion_shift.strand = '+';
-			_postion_shift.position = static_cast<uint32_t>(position);
+				_postion_shift.position = static_cast<int64_t>(position);
+
 			_postion_shift.shift = static_cast<uint32_t>(start_pos);
 			//fprintf(stderr,"%llu,%llu ",table_key,_postion_shift.position);
 			//fprintf(stderr,"%llu",_postion_shift.shift);
@@ -99,6 +103,8 @@ static int lea_map_single_read(ReferenceInfo reference_info , Tables kmer_positi
 
 	uint8_t *rvc_read_seq;
 	std::vector<PositionShift> positions_shifts;
+	std::vector<std::pair<int64_t,int64_t> > posFreqDic;
+	uint32_t posFreqDicCount = 0;
 	rvc_read_seq = (uint8_t*)calloc(read->len, 1);
 	for (int _i = 0; _i < read->len; ++_i)
 			rvc_read_seq[read->len - _i - 1] = 3 - read->seq[_i];
@@ -118,17 +124,42 @@ static int lea_map_single_read(ReferenceInfo reference_info , Tables kmer_positi
 
 	int count_debug=0;
 
-	if(positions_shifts.size() < 3)
+	if(positions_shifts.size() > 3)
 	{	count_debug ++;
 
 		fprintf(stderr,"%s\n",read->name);
+		/*
 		for(int i=0; i< positions_shifts.size(); ++i)
 		{
 			fprintf(stderr,"%c%llu ",positions_shifts[i].strand,positions_shifts[i].position-positions_shifts[i].shift);
 		}
 		fprintf(stderr,"\n");
-		//exit(1);
+		*/
+		std::map<int64_t,int64_t> position_freq;
+		for(int i=0; i<positions_shifts.size(); i++){
+			position_freq[positions_shifts[i].position - positions_shifts[i].shift] = 0;
+		}
+		for(int i=0; i<positions_shifts.size(); i++){
+			position_freq[positions_shifts[i].position - positions_shifts[i].shift] +=1;
+		}
+		std::pair<int64_t,int64_t>  _pair;
+		for (std::map<int64_t,int64_t>::iterator it=position_freq.begin(); it!=position_freq.end(); ++it){
+			_pair.first = it->first;
+			_pair.second = it->second;
+			posFreqDic.push_back(_pair);
+		}
+		std::sort(posFreqDic.begin(), posFreqDic.end(),&compareParSecondDec);
+		for(int i=0; i<posFreqDic.size();++i)
+			fprintf(stderr,"pos%lld %lld\t",posFreqDic[i].first,posFreqDic[i].second);
+
+		fprintf(stderr,"\n");
 	}
+
+
+
+
+
+
 
 
 }

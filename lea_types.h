@@ -64,14 +64,12 @@ typedef struct{
 	kseq_t *ks;
 }seqio_t;
 const uint32_t NOT_UNIQUE = (uint32_t)0xFFFFFFFF -1;
-const int ARRAY_LEN = 500 ;
+const int ARRAY_LEN = 1000 ;
 typedef uint32_t TableCell;
 
 typedef struct{
-	uint32_t position;
+	int64_t position;
 	uint32_t shift;
-	char strand; //'+' +strand, '-' -strand
-
 }PositionShift;
 
 typedef struct{
@@ -80,5 +78,9 @@ typedef struct{
 	TableCell *kmer_position_table_GG;
 	TableCell *kmer_position_table_TT;
 }Tables;
+typedef struct{
+	 int64_t first;
+	 int64_t second;
+}pair;
 
 #endif /* LEA_TYPES_H_ */

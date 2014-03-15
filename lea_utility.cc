@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <list>
 #include <stdio.h>
+#include <utility>
 
 char *int2bin(unsigned n, char *buf) {
 #define BITS (sizeof(n) * CHAR_BIT)
@@ -140,5 +141,13 @@ uint32_t vector_to_int(std::list <uint64_t> distances){
 	 return result;
 }
 
+
+bool compareParSecondDec(std::pair<int64_t,int64_t> s1, std::pair<int64_t,int64_t> s2)
+{
+
+	 if (s1.second <= s2.second) return false;
+	 if (s1.second > s2.second) return true;
+
+}
 
 
