@@ -16,7 +16,7 @@ uint8_t read_position_value(uint8_t *seq, uint64_t pos, int k, int bit_byte);
 int getKmerStrandIndicatorBit(uint32_t kmerMapArrayPos,const uint8_t *kmerStrandIndicator);
 int setKmerStrandIndicatorBit(uint32_t kmerMapArrayPos,uint8_t *kmerStrandIndicator);
 uint32_t get_kmer_length(int64_t l_pac);
-uint64_t look_ahead(uint64_t start_pos, int charaters, uint8_t *seq, int k, int bit_byte);
+uint64_t look_ahead(uint64_t start_pos, uint32_t charaters, uint8_t *seq, int k, int bit_byte);
 uint32_t  vector_to_int(std::list <uint64_t> distances);
 bool compareParSecondDec(std::pair<int64_t,int64_t> s1, std::pair<int64_t,int64_t> s2);
 #endif /* LEA_UTILITY_H_ */

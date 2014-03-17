@@ -66,10 +66,14 @@ uint8_t read_position_value(uint8_t *seq, uint64_t pos, int k, int bit_byte){
 		twoBits <<=2;
 		//fprintf(stderr,"pos+i%d ",pos+i);
 		if(bit_byte == 0)
-			twoBits +=read_position_value_helper(seq,pos+i);
+			twoBits += read_position_value_helper(seq,pos+i);
 		else
+		{
 			twoBits += seq[pos+i];
-		//fprintf(stderr,"twoBits%d ",twoBits);
+			//fprintf(stderr,"pos %llu, twoBits%d ", pos+i, seq[pos+i]);
+			if(pos >600 )exit(1);
+		}
+
 	}
 	return twoBits;
 }
@@ -104,15 +108,15 @@ uint32_t get_kmer_length(int64_t l_pac)
 /*Returns the distance from start_pos to the next position that the charaters
  *occurs. charaters contain k character
  */
-uint64_t look_ahead(uint64_t start_pos, int charaters, uint8_t *seq, int k, int bit_byte){
+uint64_t look_ahead(uint64_t start_pos, uint32_t charaters, uint8_t *seq, int k, int bit_byte){
 	uint64_t distance = 1;
 	uint8_t key;
-
+	//fprintf(stderr,"charaters: %d\n",charaters);
 	while(1){
 		  // fprintf(stderr,"start_pos+ distance:%d  ",start_pos+ distance);
 		  key = read_position_value(seq,start_pos+distance,k, bit_byte);
-		  //fprintf(stderr,"key: %d\n",key);
-		  if(key == charaters ){
+		 // fprintf(stderr,"key: %d\n",key);
+		  if(static_cast<uint32_t>(key) == charaters ){
 			  //fprintf(stderr,"dis:%d\n",distance);
 			  return distance;
 		  }
