@@ -71,7 +71,7 @@ uint8_t read_position_value(uint8_t *seq, uint64_t pos, int k, int bit_byte){
 		{
 			twoBits += seq[pos+i];
 			//fprintf(stderr,"pos %llu, twoBits%d ", pos+i, seq[pos+i]);
-			if(pos >600 )exit(1);
+			//if(pos >600 )exit(1);
 		}
 
 	}
@@ -98,9 +98,9 @@ uint32_t get_kmer_length(int64_t l_pac)
 	//FIXME need more complex function
 	uint32_t kmer_len;
 	if(l_pac < 100000 )
-		kmer_len = 5;
+		kmer_len = 6;
 	else
-		kmer_len = 7;
+		kmer_len = 6;
 	return kmer_len;
 }
 
@@ -126,6 +126,62 @@ uint64_t look_ahead(uint64_t start_pos, uint32_t charaters, uint8_t *seq, int k,
 }
 
 
+/*
+ * Returns the distance from start start_pos to the next position that 'island'(at least 2 consecutive charater)
+ */
+uint64_t look_ahead_island(uint64_t start_pos, uint32_t character, uint8_t *seq, uint32_t seq_len,int bit_byte)
+{
+	 uint64_t distance = 0;
+	 uint8_t key;
+	 int state= 0;// state = 0, not character state;  state = 1, character occurs once; state = 2, character occurs at least twice;
+	 //state machine
+	 //fprintf(stderr,"character: %d\n",character);
+	 while(1)
+	 {
+		if(start_pos+distance < seq_len)
+		{
+			key = read_position_value(seq,start_pos+distance,1, bit_byte);
+
+			distance++;
+			//fprintf(stderr,"key: %d %d\n",key, distance);
+			if(static_cast<uint32_t>(key) == character  && state == 0) //1
+			{
+				state = 1;
+				continue;
+			}
+			if(static_cast<uint32_t>(key) == character  && state == 1)  //2
+			{
+				 state = 2;
+				 continue;
+			}
+			if(static_cast<uint32_t>(key) != character  && state == 1) //3
+			{
+				  state = 0;
+				  continue;
+			}
+			if(static_cast<uint32_t>(key) != character  && state == 0) //4
+			{
+				  state = 0;
+				  continue;
+			}
+			if(static_cast<uint32_t>(key) != character  && state == 2) //5
+			{
+				  state = 0;
+				  break;
+			}
+			if(static_cast<uint32_t>(key) == character  && state == 2) //6
+			{
+				  state = 2;
+				  continue;
+			}
+		}
+		else break;
+
+	 }//while
+	 return distance -1;
+}
+
+
 //Returns a integer. Input is a size k list;
 uint32_t vector_to_int(std::list <uint64_t> distances){
 
@@ -139,7 +195,7 @@ uint32_t vector_to_int(std::list <uint64_t> distances){
 	 for(iter = distances.begin(); iter !=distances.end(); iter++ )
 	 {
 		 result <<=4;
-		 val = (*iter) > static_cast<uint64_t>(31) ? static_cast<uint64_t>(15):((*iter)/2);
+		 val = (*iter) > static_cast<uint64_t>(45) ? static_cast<uint64_t>(15):((*iter)/3);
 		 result += val;
 	 }
 	 return result;

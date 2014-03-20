@@ -63,12 +63,16 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
    int step = opt.index_parameter.char_size;
    uint64_t start_pos=0, distance, debug_total=0;
    for(int i= 0; i < opt.index_parameter.kmer_len; ++i){
-	   distance = look_ahead(start_pos, character,reference_info.pac, opt.index_parameter.char_size,0);
+	   //distance = look_ahead(start_pos, character,reference_info.pac, opt.index_parameter.char_size,0);
+	   distance =  distance = look_ahead_island(start_pos,character,reference_info.pac,reference_info.l_pac,0);
+
 	   start_pos = start_pos + distance;
 	   distances.push_back(distance);
 	   fprintf(stderr, "%d ", distance);
+
    }
    fprintf(stderr, "\n");
+
 
    std::list<uint64_t>::iterator  iter;
 
@@ -79,8 +83,10 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
    while(start_pos < length - 20){
 			 //look_ahead
 			 if(start_pos % 50000000 == 0) fprintf(stderr, "%llu pos processed\n", start_pos);
-			 distance = look_ahead(start_pos , character, reference_info.pac,opt.index_parameter.char_size,0);
-			 debug_total +=1;
+			 //distance = look_ahead(start_pos , character, reference_info.pac,opt.index_parameter.char_size,0);
+			 distance = look_ahead_island(start_pos,character,reference_info.pac,reference_info.l_pac,0);
+			 test_count +=1;
+			 test_sum +=distance;
 			 start_pos = start_pos + distance;
 
 			 //fprintf(stderr, "%d ", start_pos);
@@ -93,6 +99,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 			 }
 			 fprintf(stderr, "\n");
 			 */
+
 			 vector_to_int(distances);
 
 			 table_key = vector_to_int(distances);
@@ -117,7 +124,8 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 			 }
 
 	 }
-
+    fprintf(stderr, "testsum:%llu % llu %d\n",test_sum, test_count,test_sum/test_count);
+    //exit(1);
 	//dump
 	t = clock();
 	char *tableFn;
@@ -193,14 +201,14 @@ void lea_index_region_length(char *indexFile, Options opt){
 	TableCell *kmer_position_table_AA,*kmer_position_table_CC,*kmer_position_table_GG,*kmer_position_table_TT;
 	opt.index_parameter.char_int =0;
 	build_table(reference_info,opt,kmer_position_table_AA);
-	/*
-	opt.index_parameter.char_int =5;
+
+	opt.index_parameter.char_int =1;
 	build_table(reference_info,opt,kmer_position_table_CC);
-	opt.index_parameter.char_int =10;
+	opt.index_parameter.char_int =2;
 	build_table(reference_info,opt,kmer_position_table_GG);
-	opt.index_parameter.char_int =15;
+	opt.index_parameter.char_int =3;
 	build_table(reference_info,opt,kmer_position_table_TT);
-	*/
+
 
 }
 

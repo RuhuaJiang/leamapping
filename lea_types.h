@@ -70,6 +70,7 @@ typedef uint32_t TableCell;
 typedef struct{
 	int64_t position;
 	uint64_t shift;
+	int strand; //1 + strand; -1 - strand
 }PositionShift;
 
 typedef struct{

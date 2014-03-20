@@ -44,8 +44,10 @@ static int count_supported_positions_shifts(ReferenceInfo reference_info , Table
     	fprintf(stderr,"%d",read[i]);
     fprintf(stderr,"%\n");
     */
+
     for(int i= 0; i < opt.index_parameter.kmer_len; ++i){
-	   distance = look_ahead(start_pos, character,read, opt.index_parameter.char_size,1);
+	   //distance = look_ahead(start_pos, character,read, opt.index_parameter.char_size,1);
+	   distance = distance = look_ahead_island(start_pos,character,read,read_len,1);
 	   start_pos = start_pos + distance;
 	   distances.push_back(distance);
 	   //fprintf(stderr, "%d ", distance);
@@ -66,31 +68,35 @@ static int count_supported_positions_shifts(ReferenceInfo reference_info , Table
 	PositionShift _postion_shift;
 	//fprintf(stderr,"%llu, %llu",start_pos,static_cast<uint64_t>(read_len) - last_distance );
 
-	while(start_pos < static_cast<uint64_t>(read_len) - last_distance ){
-		distance = look_ahead(start_pos , character, read,opt.index_parameter.char_size,1);
+	while(start_pos < static_cast<uint64_t>(read_len) - 100 ){
+		//distance = look_ahead(start_pos , character, read,opt.index_parameter.char_size,1);
+		distance = look_ahead_island(start_pos,character,read,read_len,1);
 
 		start_pos = start_pos + distance;
 		distances.push_back(distance);
 		distances.pop_front();
 
-
+		/*
 		for(iter = distances.begin(); iter !=distances.end(); iter++ )
 		{
 		   fprintf(stderr, "%d ", *iter);
 		}
 		fprintf(stderr, "\n");
+		*/
+
 		//exit(1);
 
 		table_key = vector_to_int(distances);
 		position = kmer_position_table[table_key];
-		//fprintf(stderr,"%d\t%d\n", table_key,position);
+		//fprintf(stderr,"%llu\t%llu\t", table_key,position);
 		if(position !=0 && position != NOT_UNIQUE)
 		{
+			//fprintf(stderr,"distinct\n");
 			if(is_rvc)
-				_postion_shift.position = static_cast<int64_t>(position) *  (-1);
+				_postion_shift.strand = -1;
 			else
-				_postion_shift.position = static_cast<int64_t>(position);
-
+				_postion_shift.strand = 1;
+			_postion_shift.position = static_cast<int64_t>(position);
 			_postion_shift.shift = static_cast<uint64_t>(start_pos);
 			//fprintf(stderr,"%llu,%llu ",table_key,_postion_shift.position);
 			//fprintf(stderr,"%llu",_postion_shift.shift);
@@ -114,28 +120,28 @@ static int lea_map_single_read(ReferenceInfo reference_info , Tables kmer_positi
 
 	opt.index_parameter.char_int = 0;
 	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_AA,read->seq,read->len,opt, false, positions_shifts);
-	//count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_AA,rvc_read_seq,read->len,opt, true, positions_shifts);
-
-
-	opt.index_parameter.char_int = 5;
-	//count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_CC,read->seq,read->len,opt, false, positions_shifts);
-	//count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_CC,rvc_read_seq,read->len,opt, true, positions_shifts);
+	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_AA,rvc_read_seq,read->len,opt, true, positions_shifts);
 	/*
+	opt.index_parameter.char_int = 1;
+	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_CC,read->seq,read->len,opt, false, positions_shifts);
+	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_CC,rvc_read_seq,read->len,opt, true, positions_shifts);
 
-	opt.index_parameter.char_int = 10;
+
+	opt.index_parameter.char_int = 2;
 	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_GG,read->seq,read->len,opt, false, positions_shifts);
 	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_GG,rvc_read_seq,read->len,opt, true, positions_shifts);
-	opt.index_parameter.char_int = 15;
+
+	opt.index_parameter.char_int = 3;
 	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_TT,read->seq,read->len,opt, false, positions_shifts);
 	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_TT,rvc_read_seq,read->len,opt, true, positions_shifts);
-	 */
+    */
 
 	int count_debug=0;
 
 	if(positions_shifts.size() > 1)
 	{	count_debug ++;
 
-		fprintf(stderr,"%s\n",read->name);
+
 		/*
 		for(int i=0; i< positions_shifts.size(); ++i)
 		{
@@ -146,10 +152,10 @@ static int lea_map_single_read(ReferenceInfo reference_info , Tables kmer_positi
 
 		std::map<int64_t,int64_t> position_freq;
 		for(int i=0; i<positions_shifts.size(); i++){
-			position_freq[positions_shifts[i].position - static_cast<int64_t>(positions_shifts[i].shift)] = 0;
+			position_freq[(positions_shifts[i].position - static_cast<int64_t>(positions_shifts[i].shift))*positions_shifts[i].strand] = 0;
 		}
 		for(int i=0; i<positions_shifts.size(); i++){
-			position_freq[positions_shifts[i].position -  static_cast<int64_t>(positions_shifts[i].shift)] +=1;
+			position_freq[(positions_shifts[i].position - static_cast<int64_t>(positions_shifts[i].shift))*positions_shifts[i].strand] +=1;
 		}
 		std::pair<int64_t,int64_t>  _pair;
 		for (std::map<int64_t,int64_t>::iterator it=position_freq.begin(); it!=position_freq.end(); ++it){
@@ -158,15 +164,23 @@ static int lea_map_single_read(ReferenceInfo reference_info , Tables kmer_positi
 			posFreqDic.push_back(_pair);
 		}
 		std::sort(posFreqDic.begin(), posFreqDic.end(),&compareParSecondDec);
-		for(int i=0; i<posFreqDic.size();++i)
+		if(posFreqDic.size() !=0)
 		{
-			//if(posFreqDic[i].second >1)
-				fprintf(stderr,"pos%lld %lld\t",posFreqDic[i].first,posFreqDic[i].second);
+			if(posFreqDic[0].second >0)
+			{
+				fprintf(stderr,"%s\t",read->name);
+				//for(int i=0; i<posFreqDic.size();++i)
+				//{
+				fprintf(stderr,"%lld ",posFreqDic[0].first);
+				//}
+				fprintf(stderr,"\n");
+			}
 		}
-
-		fprintf(stderr,"\n");
 	}
-	exit(1);
+	else{
+		fprintf(stderr,"%s\n",read->name);
+	}
+	//exit(1);
 
 
 
