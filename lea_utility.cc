@@ -10,8 +10,12 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <list>
+#include <vector>
 #include <stdio.h>
 #include <utility>
+
+#include "lea_types.h"
+#include "lea_utility.h"
 
 char *int2bin(unsigned n, char *buf) {
 #define BITS (sizeof(n) * CHAR_BIT)
@@ -181,6 +185,74 @@ uint64_t look_ahead_island(uint64_t start_pos, uint32_t character, uint8_t *seq,
 	 return distance -1;
 }
 
+void get_spectrum(uint64_t start_pos,uint64_t length,uint8_t *seq,uint32_t seq_len,int bit_byte, Spectrum &spec)
+{
+	uint8_t key;
+	for(int i=0; i<4; i++)
+		spec.spec[i]=0;
+
+	for(uint64_t i = 0; i < length; i++)
+	{
+		key = read_position_value(seq,start_pos+i,1, bit_byte);
+		spec.spec[key] +=1;
+	}
+	/*
+	for(int i=0; i<4; i++)
+	{
+		fprintf(stderr,"%d ", spec.spec[i]);
+	    // spec.spec[i]= spec.spec[i]/spec.round_num;
+	}
+	*/
+
+
+}
+//Returns the max min --Idea of 2014-4-3
+uint64_t process_spectrum(Spectrum spec)
+{
+  uint32_t maxv=spec.spec[0], minv = spec.spec[0];
+  uint64_t maxi=0, mini=0;
+  uint64_t result = 0;
+  for(int i=1; i<4; i++){
+	  if(spec.spec[i] > maxv)
+	  {
+		  maxv = spec.spec[i];
+		  maxi = i;
+	  }
+  }
+  for(int i=1; i<4; i++){
+	  if(spec.spec[i] < minv)
+  	  {
+  		  minv = spec.spec[i];
+  		  mini = i;
+  	  }
+    }
+  result += maxi;
+  result <<=2;
+  result += mini;
+  //fprintf(stderr,"max_min: %d %d\n", maxi,mini);
+  return result;
+}
+uint32_t vector_to_int_noround(std::list <uint64_t> distances)
+{
+
+	    if(distances.size() > 8){
+			fprintf(stderr,"list to large, should smaller than or equal to 8\n");
+			exit(1);
+		}
+		 std::list<uint64_t>::iterator  iter;
+		 uint64_t val;
+		 uint32_t result = 0;
+		 for(iter = distances.begin(); iter !=distances.end(); iter++ )
+		 {
+			 //fprintf(stderr,"%llu ",(*iter));
+			 result <<=4;
+			 val = (*iter);
+			 result += val;
+		 }
+		 return result;
+
+}
+
 
 //Returns a integer. Input is a size k list;
 uint32_t vector_to_int(std::list <uint64_t> distances){
@@ -201,6 +273,13 @@ uint32_t vector_to_int(std::list <uint64_t> distances){
 	 return result;
 }
 
+void supported_positions_chainning(std::vector<PositionShift> positions_shifts)
+{
+	PositionShift position_shift = positions_shifts[0];
+	int64_t position;
+	position = (position_shift.position - static_cast<int64_t>(position_shift.shift))*position_shift.strand;
+
+}
 
 bool compareParSecondDec(std::pair<int64_t,int64_t> s1, std::pair<int64_t,int64_t> s2)
 {
