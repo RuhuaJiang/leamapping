@@ -13,6 +13,8 @@
 #include <vector>
 #include <stdio.h>
 #include <utility>
+#include <algorithm>
+#include <map>
 
 #include "lea_types.h"
 #include "lea_utility.h"
@@ -273,12 +275,44 @@ uint32_t vector_to_int(std::list <uint64_t> distances){
 	 return result;
 }
 
-void supported_positions_chainning(std::vector<PositionShift> positions_shifts)
+void supported_positions_chainning(std::vector<PositionShift> positions_shifts, uint32_t len)
 {
-	PositionShift position_shift = positions_shifts[0];
-	int64_t position;
-	position = (position_shift.position - static_cast<int64_t>(position_shift.shift))*position_shift.strand;
+	PositionShift position_shift;
+	std::vector<std::pair<int64_t,int64_t> > posFreqDic;
 
+	int64_t position;
+	std::map<int64_t,int64_t> position_freq;
+	for(int i=0; i<positions_shifts.size(); i++){
+		position_shift = positions_shifts[i];
+		position = (position_shift.position - static_cast<int64_t>(position_shift.shift))*position_shift.strand;
+		position_freq[position/1000] = 0;
+	}
+	for(int i=0; i<positions_shifts.size(); i++){
+		position_shift = positions_shifts[i];
+		position = (position_shift.position - static_cast<int64_t>(position_shift.shift))*position_shift.strand;
+		position_freq[position/1000] +=1;
+	}
+	std::pair<int64_t,int64_t>  _pair;
+	for (std::map<int64_t,int64_t>::iterator it=position_freq.begin(); it!=position_freq.end(); ++it){
+		_pair.first = it->first;
+		_pair.second = it->second;
+		posFreqDic.push_back(_pair);
+	}
+	std::sort(posFreqDic.begin(), posFreqDic.end(),&compareParSecondDec);
+	if(posFreqDic.size() !=0)
+	{
+		if(posFreqDic[0].second >0)
+		{
+			for(int i=0; i<posFreqDic.size();++i)
+			{
+				fprintf(stderr,"%lld_%llu ",posFreqDic[i].first,posFreqDic[i].second);
+			}
+			fprintf(stderr,"\n");
+		}
+	}
+
+
+	fprintf(stderr,"\n");
 }
 
 bool compareParSecondDec(std::pair<int64_t,int64_t> s1, std::pair<int64_t,int64_t> s2)

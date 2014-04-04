@@ -123,13 +123,8 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 			 }
 			 fprintf(stderr, "\n");
 			 */
-
 			 //vector_to_int(distances);
-
-
 			 //table_key = vector_to_int(distances);
-
-
 			 //fprintf(stderr, "%d ", *iter);
 			 //kmer_position_table[table_key] +=1;
 			 if ( kmer_position_table[table_key] == 0 ) // state 0 -> state 1

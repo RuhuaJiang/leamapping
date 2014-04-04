@@ -23,4 +23,5 @@ uint32_t vector_to_int_noround(std::list <uint64_t> distances);
 bool compareParSecondDec(std::pair<int64_t,int64_t> s1, std::pair<int64_t,int64_t> s2);
 void get_spectrum(uint64_t start_pos,uint64_t length,uint8_t *seq,uint32_t seq_len,int bit_byte, Spectrum &spec);
 uint64_t process_spectrum(Spectrum spec);
+void supported_positions_chainning(std::vector<PositionShift> positions_shifts, uint32_t len);
 #endif /* LEA_UTILITY_H_ */
