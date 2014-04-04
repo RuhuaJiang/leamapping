@@ -12,6 +12,9 @@
 #include "utils.h"
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
+
+
+
 typedef struct{
 	uint32_t distinct_level;
 	uint32_t kmer_len;
@@ -19,7 +22,6 @@ typedef struct{
 	uint32_t char_int;
 	bool index_reverse_complement;
 }IndexParam;
-
 
 typedef struct{
 	IndexParam  index_parameter;
@@ -33,7 +35,6 @@ typedef struct{
 	int r; //Gap extension penalty. The penalty for a contiguous gap of size k is q+k*r. [2]
 	int bw; //-w INT	 Band width in the banded alignment [33]
 }Options;
-
 
 typedef struct{
 	uint8_t *pac;
@@ -83,5 +84,14 @@ typedef struct{
 	 int64_t first;
 	 int64_t second;
 }pair;
+
+typedef struct Spectrum{
+	uint32_t round_num;
+	uint32_t spec[4];
+	Spectrum(){
+		round_num = 3;
+	}
+};
+typedef Spectrum Spectrum;
 
 #endif /* LEA_TYPES_H_ */

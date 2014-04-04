@@ -60,25 +60,34 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
    //Find first k number of character
    int character = opt.index_parameter.char_int;
    std::list <uint64_t> distances;
+   std::list <uint64_t> max_mins;
    int step = opt.index_parameter.char_size;
    uint64_t start_pos=0, distance, debug_total=0;
    for(int i= 0; i < opt.index_parameter.kmer_len; ++i){
 	   //distance = look_ahead(start_pos, character,reference_info.pac, opt.index_parameter.char_size,0);
 	   distance =  distance = look_ahead_island(start_pos,character,reference_info.pac,reference_info.l_pac,0);
-
+	   fprintf(stderr, "dis%d\t", distance);
+	   {
+	   Spectrum spec;
+	   uint64_t max_min;
+	   get_spectrum(start_pos,distance,reference_info.pac,reference_info.l_pac,0, spec);
+	   max_min = process_spectrum(spec);
+	   max_mins.push_back(max_min);
+	   }
 	   start_pos = start_pos + distance;
 	   distances.push_back(distance);
-	   fprintf(stderr, "%d ", distance);
-
    }
-   fprintf(stderr, "\n");
-
-
+   //fprintf(stderr, "\n");
    std::list<uint64_t>::iterator  iter;
-
+   /*
+   for(iter = max_mins.begin(); iter !=max_mins.end(); iter++ )
+   {
+  	  fprintf(stderr,"%llu\t",(*iter));
+   }
+   */
    uint64_t last_distance = distance, test_sum = 0, test_count =0 ;
    uint32_t table_key;
-
+   uint32_t spectrum[4];
 
    while(start_pos < length - 20){
 			 //look_ahead
@@ -87,11 +96,26 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 			 distance = look_ahead_island(start_pos,character,reference_info.pac,reference_info.l_pac,0);
 			 test_count +=1;
 			 test_sum +=distance;
-			 start_pos = start_pos + distance;
+			 //fprintf(stderr, "dis%d\t", distance);
 
+			 //get spectrum
+			 {
+				 Spectrum spec;
+				 uint64_t max_min;
+				 get_spectrum(start_pos,distance,reference_info.pac,reference_info.l_pac,0, spec);
+				 max_min = process_spectrum(spec);
+				 max_mins.push_back(max_min);
+				 max_mins.pop_front();
+				 table_key = vector_to_int_noround(max_mins);
+				 //fprintf(stderr, "key: %llu \n", table_key);
+			 }
+			 start_pos = start_pos + distance;
 			 //fprintf(stderr, "%d ", start_pos);
+			 /*
 			 distances.push_back(distance);
 			 distances.pop_front();
+			 */
+
 			 /*
 			 for(iter = distances.begin(); iter !=distances.end(); iter++ )
 			 {
@@ -100,14 +124,14 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 			 fprintf(stderr, "\n");
 			 */
 
-			 vector_to_int(distances);
+			 //vector_to_int(distances);
 
-			 table_key = vector_to_int(distances);
+
+			 //table_key = vector_to_int(distances);
+
+
 			 //fprintf(stderr, "%d ", *iter);
-
 			 //kmer_position_table[table_key] +=1;
-
-
 			 if ( kmer_position_table[table_key] == 0 ) // state 0 -> state 1
 				  kmer_position_table[table_key] =  static_cast<uint32_t>(start_pos);
 			 else if (kmer_position_table[table_key] == NOT_UNIQUE)  // state 2 -> state 2
@@ -124,6 +148,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 			 }
 
 	 }
+
     fprintf(stderr, "testsum:%llu % llu %d\n",test_sum, test_count,test_sum/test_count);
     //exit(1);
 	//dump
@@ -195,13 +220,10 @@ void lea_index_region_length(char *indexFile, Options opt){
 	opt.index_parameter.distinct_level = 1;
 	opt.index_parameter.char_size = 2;
 
-
-
 	//Builds the kmer position mapping table
 	TableCell *kmer_position_table_AA,*kmer_position_table_CC,*kmer_position_table_GG,*kmer_position_table_TT;
 	opt.index_parameter.char_int =0;
 	build_table(reference_info,opt,kmer_position_table_AA);
-
 	opt.index_parameter.char_int =1;
 	build_table(reference_info,opt,kmer_position_table_CC);
 	opt.index_parameter.char_int =2;

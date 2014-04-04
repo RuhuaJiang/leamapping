@@ -37,6 +37,7 @@ static int count_supported_positions_shifts(ReferenceInfo reference_info , Table
 	}
 
     std::list <uint64_t> distances;
+    std::list <uint64_t> max_mins;
     int step = opt.index_parameter.char_size;
     uint64_t start_pos=0, distance, debug_total=0;
     /*
@@ -48,6 +49,13 @@ static int count_supported_positions_shifts(ReferenceInfo reference_info , Table
     for(int i= 0; i < opt.index_parameter.kmer_len; ++i){
 	   //distance = look_ahead(start_pos, character,read, opt.index_parameter.char_size,1);
 	   distance = distance = look_ahead_island(start_pos,character,read,read_len,1);
+	   {
+	  	   Spectrum spec;
+	  	   uint64_t max_min;
+	  	   get_spectrum(start_pos,distance,read,read_len,1,spec);
+	  	   max_min = process_spectrum(spec);
+	  	   max_mins.push_back(max_min);
+	   }
 	   start_pos = start_pos + distance;
 	   distances.push_back(distance);
 	   //fprintf(stderr, "%d ", distance);
@@ -67,14 +75,30 @@ static int count_supported_positions_shifts(ReferenceInfo reference_info , Table
 
 	PositionShift _postion_shift;
 	//fprintf(stderr,"%llu, %llu",start_pos,static_cast<uint64_t>(read_len) - last_distance );
-
+	//fprintf(stderr,"int:%d\n",character);
 	while(start_pos < static_cast<uint64_t>(read_len) - 100 ){
 		//distance = look_ahead(start_pos , character, read,opt.index_parameter.char_size,1);
 		distance = look_ahead_island(start_pos,character,read,read_len,1);
-
+		{
+			 Spectrum spec;
+			 uint64_t max_min;
+			 get_spectrum(start_pos,distance,read,read_len,1, spec);
+			 max_min = process_spectrum(spec);
+			 max_mins.push_back(max_min);
+			 max_mins.pop_front();
+			 table_key = vector_to_int_noround(max_mins);
+			 //fprintf(stderr, "key: %llu  read_len%llu\n", table_key,read_len);
+			 //exit(1);
+		}
 		start_pos = start_pos + distance;
-		distances.push_back(distance);
-		distances.pop_front();
+
+		#ifdef USE_DISTANCE
+		{
+			distances.push_back(distance);
+			distances.pop_front();
+			table_key = vector_to_int(distances);
+		}
+		#endif
 
 		/*
 		for(iter = distances.begin(); iter !=distances.end(); iter++ )
@@ -83,10 +107,8 @@ static int count_supported_positions_shifts(ReferenceInfo reference_info , Table
 		}
 		fprintf(stderr, "\n");
 		*/
-
 		//exit(1);
 
-		table_key = vector_to_int(distances);
 		position = kmer_position_table[table_key];
 		//fprintf(stderr,"%llu\t%llu\t", table_key,position);
 		if(position !=0 && position != NOT_UNIQUE)
@@ -103,8 +125,9 @@ static int count_supported_positions_shifts(ReferenceInfo reference_info , Table
 			positions_shifts.push_back(_postion_shift);
 			//exit(1);
 		}
-
 	}
+
+	//fprintf(stderr,"\n");
 	return 0;
 }
 
@@ -121,7 +144,7 @@ static int lea_map_single_read(ReferenceInfo reference_info , Tables kmer_positi
 	opt.index_parameter.char_int = 0;
 	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_AA,read->seq,read->len,opt, false, positions_shifts);
 	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_AA,rvc_read_seq,read->len,opt, true, positions_shifts);
-	/*
+
 	opt.index_parameter.char_int = 1;
 	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_CC,read->seq,read->len,opt, false, positions_shifts);
 	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_CC,rvc_read_seq,read->len,opt, true, positions_shifts);
@@ -134,14 +157,12 @@ static int lea_map_single_read(ReferenceInfo reference_info , Tables kmer_positi
 	opt.index_parameter.char_int = 3;
 	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_TT,read->seq,read->len,opt, false, positions_shifts);
 	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_TT,rvc_read_seq,read->len,opt, true, positions_shifts);
-    */
+
 
 	int count_debug=0;
-
+	fprintf(stderr,"%s\n",read->name);
 	if(positions_shifts.size() > 1)
 	{	count_debug ++;
-
-
 		/*
 		for(int i=0; i< positions_shifts.size(); ++i)
 		{
@@ -149,7 +170,6 @@ static int lea_map_single_read(ReferenceInfo reference_info , Tables kmer_positi
 		}
 		fprintf(stderr,"\n");
 		*/
-
 		std::map<int64_t,int64_t> position_freq;
 		for(int i=0; i<positions_shifts.size(); i++){
 			position_freq[(positions_shifts[i].position - static_cast<int64_t>(positions_shifts[i].shift))*positions_shifts[i].strand] = 0;
@@ -169,10 +189,10 @@ static int lea_map_single_read(ReferenceInfo reference_info , Tables kmer_positi
 			if(posFreqDic[0].second >0)
 			{
 				fprintf(stderr,"%s\t",read->name);
-				//for(int i=0; i<posFreqDic.size();++i)
-				//{
-				fprintf(stderr,"%lld ",posFreqDic[0].first);
-				//}
+				for(int i=0; i<posFreqDic.size();++i)
+				{
+					fprintf(stderr,"%lld_%llu ",posFreqDic[i].first,posFreqDic[i].second);
+				}
 				fprintf(stderr,"\n");
 			}
 		}
@@ -180,21 +200,14 @@ static int lea_map_single_read(ReferenceInfo reference_info , Tables kmer_positi
 	else{
 		fprintf(stderr,"%s\n",read->name);
 	}
-	//exit(1);
-
-
-
-
-
-
-
 
 }
+
 static int lea_map_core(ReferenceInfo reference_info , Tables kmer_position_tables,read_t *readsChunk, uint32_t n_seqs, Options opt) {
 	uint32_t i = 0;
 	read_t  *read;
 
-	while ((uint32_t) i < (uint32_t) n_seqs) {
+	while ((uint32_t) i < (uint32_t) 4) {
 		read = &readsChunk[i++]; //A read.
 		lea_map_single_read(reference_info ,kmer_position_tables,read,opt);
 	}
@@ -214,9 +227,7 @@ int lea_map(char *refFile, char *readsFile, Options opt) {
 	char *prefix = refFile;
 	clock_t t, mapStart;
 
-
 	reference_info.bns = bns_restore(prefix);
-
 
 	opt.chunck_size =  (0x2ffff);
 	opt.index_parameter.kmer_len = get_kmer_length(reference_info.bns->l_pac);
@@ -252,15 +263,15 @@ int lea_map(char *refFile, char *readsFile, Options opt) {
 
 
 	tableFn = (char*)calloc(strlen(refFile) + 10, 1);
-	strcpy(tableFn, refFile);strcat(tableFn, ".tb");strcat(tableFn,"5");
+	strcpy(tableFn, refFile);strcat(tableFn, ".tb");strcat(tableFn,"1");
 	kmer_position_tables.kmer_position_table_CC = table_restore(tableFn,opt);
 
 	tableFn = (char*)calloc(strlen(refFile) + 10, 1);
-	strcpy(tableFn, refFile);strcat(tableFn, ".tb");strcat(tableFn,"10");
+	strcpy(tableFn, refFile);strcat(tableFn, ".tb");strcat(tableFn,"2");
 	kmer_position_tables.kmer_position_table_GG = table_restore(tableFn,opt);
 
 	tableFn = (char*)calloc(strlen(refFile) + 10, 1);
-	strcpy(tableFn, refFile);strcat(tableFn, ".tb");strcat(tableFn,"15");
+	strcpy(tableFn, refFile);strcat(tableFn, ".tb");strcat(tableFn,"3");
 	kmer_position_tables.kmer_position_table_TT = table_restore(tableFn,opt);
 
 
