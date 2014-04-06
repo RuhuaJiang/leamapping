@@ -104,9 +104,9 @@ uint32_t get_kmer_length(int64_t l_pac)
 	//FIXME need more complex function
 	uint32_t kmer_len;
 	if(l_pac < 100000 )
-		kmer_len = 6;
+		kmer_len = 7;
 	else
-		kmer_len = 6;
+		kmer_len = 7;
 	return kmer_len;
 }
 
@@ -303,11 +303,11 @@ void supported_positions_chainning(std::vector<PositionShift> positions_shifts, 
 	{
 		if(posFreqDic[0].second >0)
 		{
-			for(int i=0; i<posFreqDic.size();++i)
-			{
-				fprintf(stderr,"%lld_%llu ",posFreqDic[i].first,posFreqDic[i].second);
-			}
-			fprintf(stderr,"\n");
+			//for(int i=0; i<posFreqDic.size();++i)
+			//{
+				fprintf(stderr,"%lld_%llu ",posFreqDic[0].first,posFreqDic[0].second);
+			//}
+			//fprintf(stderr,"\n");
 		}
 	}
 
