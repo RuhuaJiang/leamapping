@@ -160,7 +160,7 @@ static int lea_map_single_read(ReferenceInfo reference_info , Tables kmer_positi
 	count_supported_positions_shifts(reference_info , kmer_position_tables.kmer_position_table_TT,rvc_read_seq,read->len,opt, true, positions_shifts);
 
 	//2014-4-3, we should use global chaining to tolerate error here
-	fprintf(stderr,"%s\t",read->name);
+	fprintf(stdout,"%s\t",read->name);
 	supported_positions_chainning(positions_shifts,read->len);
     #ifdef  OLD_CHAIN
 	int count_debug=0;

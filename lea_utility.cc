@@ -187,6 +187,60 @@ uint64_t look_ahead_island(uint64_t start_pos, uint32_t character, uint8_t *seq,
 	 return distance -1;
 }
 
+uint64_t look_ahead_dense_island(uint64_t start_pos, uint32_t character, uint8_t *seq, uint32_t seq_len,int bit_byte)
+{
+	 uint64_t distance = 0;
+	 uint8_t key;
+	 int state= 0;// state = 0, not character state;  state = 1, character occurs once; state = 2, character occurs at least twice;
+	 //state machine
+	 //fprintf(stderr,"character: %d\n",character);
+	 while(1)
+	 {
+		if(start_pos+distance < seq_len)
+		{
+			key = read_position_value(seq,start_pos+distance,1, bit_byte);
+
+			distance++;
+			//fprintf(stderr,"key: %d %d\n",key, distance);
+			if(static_cast<uint32_t>(key) == character  && state == 0) //1
+			{
+				state = 1;
+				continue;
+			}
+			if(static_cast<uint32_t>(key) == character  && state == 1)  //2
+			{
+				 state = 2;
+				 continue;
+			}
+			if(static_cast<uint32_t>(key) != character  && state == 1) //3
+			{
+				  state = 0;
+				  continue;
+			}
+			if(static_cast<uint32_t>(key) != character  && state == 0) //4
+			{
+				  state = 0;
+				  continue;
+			}
+			if(static_cast<uint32_t>(key) != character  && state == 2) //5
+			{
+				  state = 0;
+				  break;
+			}
+			if(static_cast<uint32_t>(key) == character  && state == 2) //6
+			{
+				  state = 2;
+				  continue;
+			}
+		}
+		else break;
+
+	 }//while
+
+}
+
+
+
 void get_spectrum(uint64_t start_pos,uint64_t length,uint8_t *seq,uint32_t seq_len,int bit_byte, Spectrum &spec)
 {
 	uint8_t key;
@@ -305,14 +359,14 @@ void supported_positions_chainning(std::vector<PositionShift> positions_shifts, 
 		{
 			//for(int i=0; i<posFreqDic.size();++i)
 			//{
-				fprintf(stderr,"%lld_%llu ",posFreqDic[0].first,posFreqDic[0].second);
+				fprintf(stdout,"%lld_%llu ",posFreqDic[0].first,posFreqDic[0].second);
 			//}
 			//fprintf(stderr,"\n");
 		}
 	}
 
 
-	fprintf(stderr,"\n");
+	fprintf(stdout,"\n");
 }
 
 bool compareParSecondDec(std::pair<int64_t,int64_t> s1, std::pair<int64_t,int64_t> s2)
