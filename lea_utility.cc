@@ -104,7 +104,7 @@ uint32_t get_kmer_length(int64_t l_pac)
 	//FIXME need more complex function
 	uint32_t kmer_len;
 	if(l_pac < 100000 )
-		kmer_len = 7;
+		kmer_len = 4;
 	else
 		kmer_len = 7;
 	return kmer_len;
@@ -194,49 +194,82 @@ uint64_t look_ahead_dense_island(uint64_t start_pos, uint32_t character, uint8_t
 	 int state= 0;// state = 0, not character state;  state = 1, character occurs once; state = 2, character occurs at least twice;
 	 //state machine
 	 //fprintf(stderr,"character: %d\n",character);
+	 int debug_char[4] = {'A','C','G','T'};
+	 //find the first island
 	 while(1)
 	 {
 		if(start_pos+distance < seq_len)
 		{
 			key = read_position_value(seq,start_pos+distance,1, bit_byte);
-
+			//fprintf(stderr,"%c",debug_char[key]);
 			distance++;
-			//fprintf(stderr,"key: %d %d\n",key, distance);
 			if(static_cast<uint32_t>(key) == character  && state == 0) //1
 			{
 				state = 1;
 				continue;
 			}
-			if(static_cast<uint32_t>(key) == character  && state == 1)  //2
+			if(static_cast<uint32_t>(key) != character  && state == 0) //2
 			{
-				 state = 2;
-				 continue;
+				state = 0;
+				continue;
 			}
-			if(static_cast<uint32_t>(key) != character  && state == 1) //3
+			if(static_cast<uint32_t>(key) == character  && state == 1) //3
 			{
-				  state = 0;
-				  continue;
+				state = 2;
+				continue;
 			}
-			if(static_cast<uint32_t>(key) != character  && state == 0) //4
+			if(static_cast<uint32_t>(key) != character  && state == 1) //4
 			{
-				  state = 0;
-				  continue;
+				state = 0;
+				continue;
 			}
-			if(static_cast<uint32_t>(key) != character  && state == 2) //5
+			if(static_cast<uint32_t>(key) == character  && state == 2) //5
 			{
-				  state = 0;
-				  break;
+				state = 2;
+				continue;
 			}
-			if(static_cast<uint32_t>(key) == character  && state == 2) //6
+			if(static_cast<uint32_t>(key) != character  && state == 2) //6
 			{
-				  state = 2;
-				  continue;
+				state = 3;
+				continue;
 			}
+			if(static_cast<uint32_t>(key) == character  && state == 3) //7
+			{
+				state = 4;
+				continue;
+			}
+			if(static_cast<uint32_t>(key) != character  && state == 3) //8
+			{
+				if (distance >10){
+					state = 5;
+					break;
+				}
+				else{
+					state =0;
+					continue;
+				}
+			}
+			if(static_cast<uint32_t>(key) == character  && state == 4) //9
+			{
+				state = 2;
+				continue;
+			}
+			if(static_cast<uint32_t>(key) != character  && state == 4) //10
+			{
+				if (distance >10){
+					state = 5;
+					break;
+				}
+				else{
+					state =0;
+					continue;
+				}
+			}
+
 		}
 		else break;
-
 	 }//while
-
+	 return distance -1;
 }
 
 
@@ -357,11 +390,12 @@ void supported_positions_chainning(std::vector<PositionShift> positions_shifts, 
 	{
 		if(posFreqDic[0].second >0)
 		{
-			//for(int i=0; i<posFreqDic.size();++i)
-			//{
-				fprintf(stdout,"%lld_%llu ",posFreqDic[0].first,posFreqDic[0].second);
-			//}
-			//fprintf(stderr,"\n");
+			for(int i=0; i<posFreqDic.size();++i)
+			{
+				if(posFreqDic[i].second != posFreqDic[0].second ) break;
+				else fprintf(stdout,"%lld_%llu ",posFreqDic[i].first,posFreqDic[i].second);
+			}
+			fprintf(stdout,"\n");
 		}
 	}
 

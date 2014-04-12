@@ -65,8 +65,10 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
    uint64_t start_pos=0, distance, debug_total=0;
    for(int i= 0; i < opt.index_parameter.kmer_len; ++i){
 	   //distance = look_ahead(start_pos, character,reference_info.pac, opt.index_parameter.char_size,0);
-	   distance =  distance = look_ahead_island(start_pos,character,reference_info.pac,reference_info.l_pac,0);
-	   fprintf(stderr, "dis%d\t", distance);
+	   //distance =  distance = look_ahead_island(start_pos,character,reference_info.pac,reference_info.l_pac,0);
+	   distance = look_ahead_dense_island(start_pos,character, reference_info.pac, reference_info.l_pac,0);
+
+	   //fprintf(stderr, "\tdis%d\n", distance);
 	   {
 	   Spectrum spec;
 	   uint64_t max_min;
@@ -77,6 +79,7 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 	   start_pos = start_pos + distance;
 	   distances.push_back(distance);
    }
+   //exit(1);
    //fprintf(stderr, "\n");
    std::list<uint64_t>::iterator  iter;
    /*
@@ -93,7 +96,8 @@ static void  build_table(ReferenceInfo reference_info,Options opt, TableCell* km
 			 //look_ahead
 			 if(start_pos % 50000000 == 0) fprintf(stderr, "%llu pos processed\n", start_pos);
 			 //distance = look_ahead(start_pos , character, reference_info.pac,opt.index_parameter.char_size,0);
-			 distance = look_ahead_island(start_pos,character,reference_info.pac,reference_info.l_pac,0);
+			 //distance = look_ahead_island(start_pos,character,reference_info.pac,reference_info.l_pac,0);
+			 distance = look_ahead_dense_island(start_pos,character, reference_info.pac, reference_info.l_pac,0);
 			 test_count +=1;
 			 test_sum +=distance;
 			 //fprintf(stderr, "dis%d\t", distance);

@@ -48,7 +48,9 @@ static int count_supported_positions_shifts(ReferenceInfo reference_info , Table
 
     for(int i= 0; i < opt.index_parameter.kmer_len; ++i){
 	   //distance = look_ahead(start_pos, character,read, opt.index_parameter.char_size,1);
-	   distance = distance = look_ahead_island(start_pos,character,read,read_len,1);
+	   //distance = distance = look_ahead_island(start_pos,character,read,read_len,1);
+       distance = look_ahead_dense_island(start_pos,character,read,read_len,1);
+
 	   {
 	  	   Spectrum spec;
 	  	   uint64_t max_min;
@@ -78,7 +80,8 @@ static int count_supported_positions_shifts(ReferenceInfo reference_info , Table
 	//fprintf(stderr,"int:%d\n",character);
 	while(start_pos < static_cast<uint64_t>(read_len) - 100 ){
 		//distance = look_ahead(start_pos , character, read,opt.index_parameter.char_size,1);
-		distance = look_ahead_island(start_pos,character,read,read_len,1);
+		//distance = look_ahead_island(start_pos,character,read,read_len,1);
+		  distance = look_ahead_dense_island(start_pos,character,read,read_len,1);
 		{
 			 Spectrum spec;
 			 uint64_t max_min;
